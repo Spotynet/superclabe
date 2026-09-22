@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"</style>\\\\|<style>\\\\|\\\\.seg\\\\|\\\\.chip\\\\|\\\\.pill\\\\|input,select\\\\|select{\" index.html)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const h=fs.readFileSync\\('index.html','utf8'\\);const m=[...h.matchAll\\(/<script>\\([\\\\s\\\\S]*?\\)<\\\\/script>/g\\)];let code=m.map\\(x=>x[1]\\).join\\('\\\\n;\\\\n'\\);require\\('vm'\\).createContext\\({}\\);try{new require\\('vm'\\).Script\\(code\\);console.log\\('JS OK'\\);}catch\\(e\\){console.log\\('JS ERROR:',e.message\\);}\")",
+      "Bash(node *)",
+      "Bash(command -v initdb pg_ctl postgres)",
+      "Bash(pg_lsclusters)",
+      "Bash(rm -f mig_test.db webapp_spei.db)",
+      "Bash(ls *.db)",
+      "Read(//home/ubuntu/.cache/ms-playwright/**)",
+      "Bash(command -v chromium chromium-browser google-chrome)",
+      "Bash(PWNM=/home/ubuntu/.npm/_npx/e41f203b7505f1fb/node_modules SS=/tmp/claude-1000/-home-ubuntu-projects-apps-superclabe-webapp-spei-codi/ff790c40-11a9-4bec-8299-0d9e25ce6d97/scratchpad node *)",
+      "Bash(cd *)",
+      "Bash(PWNM=/home/ubuntu/.npm/_npx/e41f203b7505f1fb/node_modules node -e ' *)",
+      "Bash(rm -f backend/webapp_spei.db)",
+      "Bash(ls backend/*.db)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8010/config.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8010/app/config.js)",
+      "Bash('#dCharges')",
+      "Bash('#dSettled')",
+      "Bash('#dVolume')",
+      "Bash(curl -s http://127.0.0.1:8010/api/health)",
+      "Bash(PWNM=/home/ubuntu/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-ubuntu-projects-apps-superclabe-webapp-spei-codi/ff790c40-11a9-4bec-8299-0d9e25ce6d97/scratchpad/e2e.js)",
+      "Bash(pkill -f \"uvicorn app.main\")",
+      "Bash(rm -f /tmp/claude-1000/-home-ubuntu-projects-apps-superclabe-webapp-spei-codi/ff790c40-11a9-4bec-8299-0d9e25ce6d97/scratchpad/*.js)",
+      "Bash(sudo -u postgres psql -q -c \"DROP DATABASE IF EXISTS sc_fresh;\" -c \"DROP DATABASE IF EXISTS sc_old;\" -c \"DROP ROLE IF EXISTS sc;\")"
+    ]
+  }
+}
