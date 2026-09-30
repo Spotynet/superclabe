@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from ..audit import write_audit
-from ..alias_norm import alias_key, find_user_by_alias
+from ..alias_norm import alias_key, find_operational_user, find_user_by_alias
 from ..crypto import verify_password
 from ..database import get_db
 from ..fees import calc_membership_fee, money2
@@ -47,8 +47,8 @@ def direct_payment(body: DirectPayIn, request: Request,
     """Envía un pago directo a un usuario del sistema, sin QR de cobro.
 
     El emisor (usuario autenticado) envía dinero al destinatario. La tarifa de
-    software (0.05% + I.V.A.) se cobra SOLAMENTE a la membresía del receptor, ya
-    que es un cobro no solicitado. El emisor NO paga comisión.
+    software escalonada v5 (+ I.V.A.) se cobra SOLAMENTE a la membresía del
+    receptor, ya que es un cobro no solicitado. El emisor NO paga comisión.
     """
     # Validación clave: no enviarte pagos a ti mismo
     if alias_key(body.recipient_alias) == alias_key(user.alias):
@@ -56,7 +56,7 @@ def direct_payment(body: DirectPayIn, request: Request,
             "error": "SELF_PAYMENT",
             "message": "No puedes enviarte pagos a ti mismo.",
         })
-    recipient = find_user_by_alias(db, body.recipient_alias)
+    recipient = find_operational_user(db, body.recipient_alias)
     if not recipient:
         raise HTTPException(404, "Usuario destinatario no encontrado en el sistema")
 
@@ -66,9 +66,9 @@ def direct_payment(body: DirectPayIn, request: Request,
     # Receptor: tope de ABONOS del mes según su Perfil Financiero (Regla 72a / art. 115)
     assert_abono_within_kyc(db, recipient, amount, role="recibir este pago", as_self=False)
     fees = calc_membership_fee(amount)
-    fee = fees["total_fee"]  # 0.05% + I.V.A. sólo al receptor
+    fee = fees["total_fee"]  # tarifa escalonada v5 + I.V.A. sólo al receptor
 
-    # La tarifa de software (0.05% + I.V.A.) se cobra SOLAMENTE a la membresía del receptor.
+    # La tarifa de software se cobra SOLAMENTE a la membresía del receptor.
     recipient_ms = db.query(Membership).filter(Membership.user_id == recipient.id).first()
 
     if recipient_ms is None or float(recipient_ms.balance) < fee:
@@ -82,13 +82,15 @@ def direct_payment(body: DirectPayIn, request: Request,
             db.commit()
         write_audit(db, recipient.alias, "FEE_DEDUCTION_BLOCKED", "membership",
                     severity="WARNING", details={"required_fee": fee, "base_fee": fees["base_fee"],
-                                                 "iva": fees["iva"], "type": "direct", "party": "receptor"})
+                                                 "iva": fees["iva"], "fee_rate": fees["fee_rate"],
+                                                 "type": "direct", "party": "receptor"})
         raise HTTPException(402, {
             "error": "INSUFFICIENT_MEMBERSHIP_BALANCE",
             "party": "receptor",
             "required_fee": fee,
             "base_fee": fees["base_fee"],
             "iva": fees["iva"],
+            "fee_rate": fees["fee_rate"],
             "current_balance": float(recipient_ms.balance) if recipient_ms else 0,
             "message": f"Saldo de membresía insuficiente en el destinatario ({recipient.alias}). Recarga para continuar.",
         })
@@ -116,13 +118,14 @@ def direct_payment(body: DirectPayIn, request: Request,
                 request.client.host if request.client else "0.0.0.0",
                 details={"folio": folio, "clave_rastreo": clave,
                          "fee_recipient": fee, "base_fee": fees["base_fee"], "iva": fees["iva"],
+                         "fee_rate": fees["fee_rate"], "fee_model": fees["fee_model"],
                          "total_fee": fee, "amount": amount, "recipient": recipient.alias,
                          "concept": body.concept})
     return {
         "status": "PROCESSED", "folio_codi": folio, "clave_rastreo": clave,
         "recipient_alias": recipient.alias, "amount": amount,
         "sender_fee": 0, "recipient_fee": fee, "base_fee": fees["base_fee"],
-        "iva": fees["iva"], "total_fee": fee,
+        "iva": fees["iva"], "total_fee": fee, "fee_rate": fees["fee_rate"],
         "concept": body.concept or "Pago directo",
         "new_sender_balance": None,
         "new_recipient_balance": float(recipient_ms.balance),
@@ -174,7 +177,8 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
     """Simula la aceptación del pago por el pagador y la liquidación SPEI/CoDi.
 
     En producción esto lo confirma el banco patrocinador vía webhook; aquí se
-    ejecuta el flujo completo: validación de PIN, liquidación y deducción 0.05%.
+    ejecuta el flujo completo: validación de PIN, liquidación y deducción de la
+    tarifa escalonada v5.
     """
     c = _get_charge(db, folio)
     if c.status != "PENDING":
@@ -234,11 +238,21 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
     beneficiary = db.query(User).filter(User.id == c.user_id).first()
     payer = None
     if body.payer_alias:
-        payer = find_user_by_alias(db, body.payer_alias)
+        payer = find_operational_user(db, body.payer_alias)
+        if payer is None and find_user_by_alias(db, body.payer_alias) is not None:
+            raise HTTPException(403, {
+                "error": "PAYER_NOT_ALLOWED",
+                "message": "Este usuario no puede realizar pagos (desactivado o cuenta de administración).",
+            })
 
     # Tope de ABONOS solo al beneficiario (quien recibe). El pagador no se limita por nivel de abonos.
     if not beneficiary:
         raise HTTPException(404, "Beneficiario del cobro no encontrado")
+    if not beneficiary.is_active:
+        raise HTTPException(409, {
+            "error": "BENEFICIARY_INACTIVE",
+            "message": "El beneficiario de este cobro está desactivado; no puede recibir pagos.",
+        })
     assert_abono_within_kyc(
         db, beneficiary, pay_amount,
         role="recibir este cobro",
@@ -248,7 +262,7 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
     if payer:
         assert_min_kyc_level(payer, role="realizar este pago", as_self=False)
 
-    # --- Módulo 5: deducción del 0.05% + I.V.A. al beneficiario/emisor de la orden ---
+    # --- Módulo 5: deducción de tarifa escalonada v5 + I.V.A. al beneficiario/emisor de la orden ---
     # (el dueño del cobro paga la tarifa de software; no hay comisión al pagador)
     membership = db.query(Membership).filter(Membership.user_id == beneficiary.id).first()
     fees = calc_membership_fee(pay_amount)
@@ -264,12 +278,14 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
             db.commit()
         write_audit(db, beneficiary.alias, "FEE_DEDUCTION_BLOCKED", "membership",
                     severity="WARNING", details={"folio": folio, "required_fee": fee,
-                                                 "base_fee": fees["base_fee"], "iva": fees["iva"]})
+                                                 "base_fee": fees["base_fee"], "iva": fees["iva"],
+                                                 "fee_rate": fees["fee_rate"]})
         raise HTTPException(402, {
             "error": "INSUFFICIENT_MEMBERSHIP_BALANCE",
             "required_fee": fee,
             "base_fee": fees["base_fee"],
             "iva": fees["iva"],
+            "fee_rate": fees["fee_rate"],
             "current_balance": float(membership.balance) if membership else 0,
             "system_action": "DENY_TRANSACTION_GENERATION",
             "message": "Saldo de membresía insuficiente para procesar. Recarga para continuar.",
@@ -304,11 +320,12 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
                 request.client.host if request.client else "0.0.0.0",
                 details={"folio": folio, "clave_rastreo": clave, "fee": fee,
                          "base_fee": fees["base_fee"], "iva": fees["iva"],
+                         "fee_rate": fees["fee_rate"], "fee_model": fees["fee_model"],
                          "amount": pay_amount, "uso": f"{c.uses_count}/{c.max_uses}"})
     return {
         "status": "PROCESSED", "folio_codi": c.folio_codi, "clave_rastreo": clave,
         "liquidated_amount": pay_amount, "calculated_fee": fee,
-        "base_fee": fees["base_fee"], "iva": fees["iva"],
+        "base_fee": fees["base_fee"], "iva": fees["iva"], "fee_rate": fees["fee_rate"],
         "charge_status": c.status, "uses_count": c.uses_count, "max_uses": c.max_uses,
         "new_membership_balance": float(membership.balance),
         "cep_url": CEP + c.folio_codi, "settled_at": datetime.utcnow(),

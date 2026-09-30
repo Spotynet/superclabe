@@ -50,8 +50,9 @@
   }
   body.nav-open .side{transform:translateX(0)}
   /* Botón hamburguesa (siempre visible) */
-  .menu-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:42px;height:42px;flex:none;
-    background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:0;font-size:18px;line-height:1}
+  .menu-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 12px;flex:none;
+    background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;font-size:18px;line-height:1;font-weight:700}
+  .menu-btn .ml{font-size:13px;font-weight:700}
   .menu-btn:hover{border-color:var(--brand);color:var(--brand)}
   .topbar-lead{display:flex;align-items:center;gap:12px;min-width:0}
   /* Fondo al abrir el menú */
@@ -364,6 +365,15 @@
   .mem-sim-result .val{font-size:22px;font-weight:800;color:var(--brand-deep);margin:0;line-height:1.2}
   .mem-sim-result .val .stat-currency{font-size:.42em}
   .mem-sim-result .detail{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
+  .tier-list{display:grid;gap:8px;margin-top:12px}
+  .tier-row{
+    display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;
+    padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;
+  }
+  .tier-row.is-active{border-color:var(--brand);background:rgba(42,141,146,.07)}
+  .tier-row .tier-range{font-size:13.5px;font-weight:700;color:var(--txt)}
+  .tier-row .tier-rate{font-size:18px;font-weight:800;color:var(--brand-deep);grid-column:2;grid-row:1 / span 2;text-align:right}
+  .tier-row .tier-seg{font-size:12px;color:var(--muted);line-height:1.4}
   .mem-foot{
     border:1px dashed var(--line);border-radius:14px;padding:14px 16px;background:rgba(247,252,251,.8);
   }
@@ -407,7 +417,7 @@
   .qr-frame canvas{display:none}
   .qr-frame img{
     display:block;width:100%;max-width:100%;height:auto;
-    image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;
+    image-rendering:pixelated;image-rendering:crisp-edges;
   }
   /* Modal QR generado */
   .modal-card.qr-modal{
@@ -443,7 +453,7 @@
   }
   .qr-stage .qr-frame{
     box-shadow:0 10px 28px rgba(14,59,67,.16);border:3px solid #fff;
-    border-radius:16px;padding:18px;background:#fff;max-width:min(100%,300px);
+    border-radius:16px;padding:10px;background:#fff;max-width:min(100%,400px);
   }
   .qr-amt{
     font-size:28px;font-weight:800;color:var(--brand-deep);letter-spacing:-.02em;line-height:1.1;
@@ -489,7 +499,7 @@
     .qr-modal-hero{padding:16px 16px 12px}
     .qr-modal-hero h3{font-size:16px;padding:0 28px}
     .qr-modal-hero .qr-sub{font-size:12px}
-    .qr-stage .qr-frame{max-width:min(100%,280px);padding:16px}
+    .qr-stage .qr-frame{max-width:min(100%,360px);padding:8px}
   }
   .row{display:flex;gap:12px}.row>div{flex:1}
   button{cursor:pointer;border:none;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:600;color:#fff;
@@ -878,6 +888,11 @@
     background:var(--input);border:2px solid var(--line);color:var(--txt);border-radius:12px;width:100%;outline:none}
   .amt-big:focus{border-color:var(--brand)}
   .amt-big::placeholder{color:#8aa5a9;font-weight:400;font-size:18px}
+  .money-field{display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;background:var(--input);overflow:hidden}
+  .money-field:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px rgba(100,196,188,.25)}
+  .money-field .pfx{flex:none;padding:0 2px 0 14px;font-size:26px;font-weight:800;color:var(--brand-deep);line-height:1}
+  .money-field input,.money-field input.amt-big{width:auto;flex:1;min-width:0;border:none;box-shadow:none;background:transparent;border-radius:0;text-align:left;padding-left:4px}
+  .money-read{margin:6px 2px 0;font-size:13px;font-weight:700;color:var(--brand-deep);min-height:1.2em}
   /* Wizard nav buttons */
   .wiz-nav{display:flex;gap:10px;margin-top:18px}
   .wiz-nav button{flex:1;padding:13px 16px;font-size:14px;border-radius:10px}
@@ -969,7 +984,8 @@
     .lbl-full{display:none}
     .lbl-short{display:inline}
     .chip,.menu-btn,.fav-btn,.notif-btn,button.sm{min-height:42px}
-    .menu-btn{width:42px;height:42px}
+    .menu-btn{width:42px;height:42px;padding:0}
+    .menu-btn .ml{display:none}
     .card,.sec-card{padding:14px;border-radius:12px}
     .mod-hd{align-items:flex-start}
     .mod-hd h3{font-size:14.5px;line-height:1.3}
@@ -1218,13 +1234,13 @@
     <div class="hint" style="text-align:center;margin:4px 0 2px"><a href="/" style="color:var(--brand);font-weight:600">← Conocer Súper CLABE</a></div>
     <!-- Login -->
     <div id="authLogin">
-      <label style="margin-top:10px">Alias del usuario</label>
+      <label style="margin-top:10px">Alias (tu celular)</label>
       <div class="alias-wrap">
         <span class="pfx">$@</span>
-        <input id="lgAliasRest" placeholder="tu-alias" autocomplete="username" spellcheck="false"
+        <input id="lgAliasRest" placeholder="5512345678" autocomplete="username" spellcheck="false"
                oninput="onLoginAliasInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupLoginAlias();}">
       </div>
-      <div class="hint" style="margin-top:6px">Escribe el alias completo. El prefijo <b style="color:var(--brand)">$@</b> ya está incluido. Mayúsculas o minúsculas dan igual.</div>
+      <div class="hint" style="margin-top:6px">Escribe tu celular de 10 dígitos. El prefijo <b style="color:var(--brand)">$@</b> ya está incluido.</div>
       <button type="button" class="ghost" style="width:100%;margin-top:12px" onclick="lookupLoginAlias()">Buscar usuario</button>
       <div id="lgAliasResult" style="margin-top:12px" aria-live="polite"></div>
     </div>
@@ -1232,21 +1248,14 @@
     <div id="authReg" class="hide">
       <label>Tipo de registro</label>
       <div class="reader-btns" id="rgType"></div>
-      <div class="row">
-        <div><label>Correo <span style="color:var(--muted);font-weight:500">(único)</span></label>
-          <input id="rgEmail" type="email" placeholder="juan.perez@correo.com" autocomplete="email"
-                 oninput="clearContactTakenHint('email'); if(rgAliasMode==='mail')fillAliasFromMail(true)"></div>
-        <div><label>Celular <span style="color:var(--muted);font-weight:500">(único)</span></label>
-          <input id="rgPhone" maxlength="10" inputmode="numeric" placeholder="5512345678" autocomplete="tel"
-                 oninput="clearContactTakenHint('phone'); if(rgAliasMode==='phone')fillAliasFromPhone(true)"></div>
-      </div>
-      <div id="rgContactTaken" class="note warn hide" style="margin-top:8px" role="alert"></div>
-      <label>Cómo quieres crear tu alias</label>
-      <div class="reader-btns" id="rgAliasMode" style="margin-bottom:8px"></div>
-      <label>Alias único en el sistema</label>
-      <div class="alias-wrap"><span class="pfx">$@</span><input id="rgAliasRest" placeholder="tu-alias" oninput="onAliasRestInput()" autocomplete="off" spellcheck="false"></div>
-      <div class="hint" id="rgAliasHint">El alias <b style="color:var(--brand)">siempre inicia con $@</b> y debe ser <b>único</b> en el sistema (persona o empresa).</div>
+      <label>Celular <span style="color:var(--muted);font-weight:500">(será tu alias)</span></label>
+      <div class="alias-wrap"><span class="pfx">$@</span><input id="rgPhone" maxlength="10" inputmode="numeric" placeholder="5512345678" autocomplete="tel"
+             oninput="onRegPhoneInput()"></div>
+      <div class="hint" id="rgAliasHint">Tu alias será <b style="color:var(--brand)">$@</b> + tu celular de 10 dígitos. Es <b>único</b>: un celular sólo puede tener un usuario y con él entras al sistema.</div>
       <div id="rgAliasTaken" class="note warn hide" style="margin-top:10px" role="alert"></div>
+      <label>Correo <span style="color:var(--muted);font-weight:500">(opcional, sólo informativo)</span></label>
+      <input id="rgEmail" type="email" placeholder="juan.perez@correo.com" autocomplete="email">
+      <div class="hint">El correo no se usa para entrar ni para identificarte.</div>
       <div id="rgFields"></div>
       <button style="width:100%;margin-top:16px" onclick="doRegister()">Crear usuario y entrar</button>
     </div>
@@ -1304,7 +1313,7 @@
 <div class="app">
   <div class="nav-backdrop" id="navBackdrop" onclick="closeNav()"></div>
   <aside class="side" id="sidebar">
-    <button class="side-close" onclick="closeNav()" aria-label="Cerrar menú">✕</button>
+    <button class="side-close" type="button" onclick="dismissNav()" aria-label="Ocultar menú">✕</button>
     <div class="brand">
       <img class="logo-side" src="assets/logo-super-clabe.jpg" alt="Súper CLABE">
       <small style="padding-left:2px">Capa no-custodia SPEI / CoDi</small>
@@ -1318,9 +1327,9 @@
       <a data-v="billing"><span class="ic">③</span>Cobrar</a>
       <a data-v="checkout"><span class="ic">④</span>Pagar</a>
       <a data-v="membership"><span class="ic">⑤</span>Membresía</a>
-      <a data-v="audit"><span class="ic">⑥</span>Bitácoras</a>
     </nav>
     <div class="side-footer">
+      <button class="ghost sm" type="button" onclick="dismissNav()">Ocultar menú</button>
       <button class="ghost sm" onclick="resetData()">↺ Cerrar sesión</button>
       <div class="side-powered">
         Powered by <a href="https://spotynet.com/" target="_blank" rel="noopener noreferrer">Spotynet</a><br>
@@ -1332,7 +1341,7 @@
   <main class="main">
     <div class="topbar">
       <div class="topbar-lead">
-        <button class="menu-btn" id="menuBtn" onclick="toggleNav()" aria-label="Mostrar u ocultar menú" title="Menú">☰</button>
+        <button class="menu-btn" id="menuBtn" type="button" onclick="toggleNav()" aria-label="Mostrar u ocultar menú" aria-expanded="true" title="Mostrar u ocultar menú"><span aria-hidden="true">☰</span><span class="ml">Menú</span></button>
         <div>
           <h1 id="viewTitle">Inicio</h1>
           <p id="viewSub">Tu resumen de cobros, pagos y saldo</p>
@@ -1426,7 +1435,7 @@
           <h3>Sumar a alguien</h3>
           <div class="sub">Búscalo y toca ☆ para guardarlo</div>
           <label style="margin-top:10px">Buscar usuario</label>
-          <input id="favModSearch" placeholder="Alias, nombre o correo…" oninput="renderFavoritesModuleSearch()" autocomplete="off">
+          <input id="favModSearch" placeholder="Celular (alias) o nombre…" oninput="renderFavoritesModuleSearch()" autocomplete="off">
           <div id="favModSearchResults" class="user-results" style="max-height:min(50vh,360px)"></div>
         </div>
       </div>
@@ -1516,7 +1525,7 @@
               <label style="margin-top:0">Tus favoritos</label>
               <div id="bFavs" class="user-results send-favs" style="max-height:none"></div>
               <label style="margin-top:12px">O busca a alguien más</label>
-              <input id="bUserSearch" placeholder="Alias, nombre o correo…" oninput="renderUserSearch()" autocomplete="off">
+              <input id="bUserSearch" placeholder="Celular (alias) o nombre…" oninput="renderUserSearch()" autocomplete="off">
               <div id="bUserResults" class="user-results"></div>
               <div id="bTargetSel" class="note hide" style="margin-top:8px"></div>
             </div>
@@ -1527,7 +1536,11 @@
           <div class="pay-step-label">2 · ¿Cuánto te van a pagar?</div>
           <div id="bAmountMode" class="toggle-cards"></div>
           <div id="bAmountWrap" style="margin-top:12px">
-            <input id="bAmount" class="amt-big" type="number" placeholder="$0.00">
+            <div class="money-field">
+              <span class="pfx">$</span>
+              <input id="bAmount" class="amt-big" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Monto a cobrar en pesos">
+            </div>
+            <p class="money-read" id="bAmountRead">Se verá como $0.00</p>
           </div>
           <div class="row" style="margin-top:14px">
             <div><label>¿Por qué te pagan? (concepto)</label><input id="bConcept" maxlength="40" placeholder="Ej. Renta, servicios, producto…"></div>
@@ -1649,7 +1662,7 @@
             <span class="pay-path-go" aria-hidden="true">→</span>
           </button>
         </div>
-        <div class="pay-home-note">Tú no pagas comisión al enviar. La membresía del receptor cubre la tarifa 0.05% + I.V.A.</div>
+        <div class="pay-home-note">Tú no pagas comisión al enviar. La membresía del receptor cubre la tarifa escalonada (1.00% / 0.83% / 0.50% + I.V.A.).</div>
       </div>
 
       <!-- Panel de la opción elegida -->
@@ -1726,13 +1739,19 @@
             <label style="margin-top:0">Tus favoritos</label>
             <div id="sendFavs" class="user-results send-favs" aria-live="polite"></div>
             <label>Buscar otro usuario</label>
-            <input id="sendUserSearch" placeholder="Alias, nombre o correo…" oninput="renderSendSearch()" autocomplete="off">
+            <input id="sendUserSearch" placeholder="Celular (alias) o nombre…" oninput="renderSendSearch()" autocomplete="off">
             <div id="sendUserResults" class="user-results"></div>
             <div id="sendTargetSel" class="note hide" style="margin-top:8px"></div>
 
             <div class="pay-step-label" style="margin-top:18px">2 · Monto y concepto</div>
             <div class="row">
-              <div><label style="margin-top:0">Monto (MXN)</label><input id="sendAmount" type="number" placeholder="0.00" inputmode="decimal"></div>
+              <div><label style="margin-top:0">Monto (MXN)</label>
+                <div class="money-field">
+                  <span class="pfx">$</span>
+                  <input id="sendAmount" class="amt-big" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Monto a enviar en pesos">
+                </div>
+                <p class="money-read" id="sendAmountRead">Se verá como $0.00</p>
+              </div>
               <div><label style="margin-top:0">Concepto <span style="font-weight:500;color:var(--muted)">(opcional)</span></label><input id="sendConcept" maxlength="40" placeholder="Ej. Pago de servicios"></div>
             </div>
             <button type="button" class="pay-send-btn" onclick="sendDirectPayment()">Enviar pago</button>
@@ -1769,7 +1788,7 @@
       <div class="mem-page">
         <div class="pay-intro" style="margin:0">
           <h2>¿Cuánta “gasolina” te queda?</h2>
-          <p>Con tu membresía pagas la tarifa chiquita (0.05% + I.V.A.) y sigues cobrando sin frenos.</p>
+          <p>Con tu membresía pagas una tarifa escalonada según el monto de cada cobro (1.00%, 0.83% o 0.50% + I.V.A.) y sigues cobrando sin frenos.</p>
         </div>
 
         <!-- 1. Saldo -->
@@ -1804,13 +1823,13 @@
         <!-- 3. Simulador -->
         <div class="mem-card">
           <h3>¿Cuánto me costaría?</h3>
-          <p class="mem-sub" id="mSimChipsNote">Prueba con el tope de abonos de tu perfil.</p>
+          <p class="mem-sub" id="mSimChipsNote">Escribe el monto de un cobro y te decimos qué tarifa le toca.</p>
           <div class="mem-primary-chips" id="mSimPrimary"></div>
           <button type="button" class="mem-more-toggle" id="mSimMoreBtn" onclick="toggleMemMore('mSimMore','mSimMoreBtn')">Probar otros montos</button>
           <div class="mem-more" id="mSimMore">
             <div class="money-chips" id="mSimChips"></div>
           </div>
-          <label style="margin-top:14px">Monto a simular</label>
+          <label style="margin-top:14px">Monto de la operación</label>
           <div class="money-field">
             <span class="money-prefix">$</span>
             <input id="mSim" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Monto de operación en MXN">
@@ -1819,31 +1838,27 @@
           <div class="mem-sim-result">
             <p class="lbl">Tarifa estimada</p>
             <p class="val" id="mSimOut">$0.00 <span class="stat-currency">MXN</span></p>
-            <p class="detail" id="mSimDetail">Tarifa 0.05% + I.V.A. 16%</p>
+            <p class="detail" id="mSimDetail">Tarifa escalonada + I.V.A. 16%</p>
           </div>
         </div>
 
-        <!-- 4. Ayuda breve -->
+        <!-- 4. Tabla de tarifas escalonadas (v5) -->
+        <div class="mem-card">
+          <h3>Tarifas escalonadas</h3>
+          <p class="mem-sub">La tasa depende del monto de cada operación y se aplica sobre el monto completo. Entre más grande el ticket, menor la tasa.</p>
+          <div class="tier-list" id="mTierList"></div>
+          <p class="mem-sub" style="margin-top:10px">Más I.V.A. 16% sobre la tarifa. Solo la paga quien recibe el dinero.</p>
+        </div>
+
+        <!-- 5. Ayuda breve -->
         <details class="mem-foot">
           <summary>¿Para qué sirve la membresía?</summary>
-          <p>En CoDi no se cobra comisión interbancaria al que recibe. Nosotros cobramos una tarifa de software muy pequeña (0.05% + I.V.A.). En cobros con QR la paga quien cobra; en pagos directos, solo quien recibe. Si el saldo llega a cero, pausamos cobros nuevos hasta que recargues.</p>
+          <p>En CoDi no se cobra comisión interbancaria al que recibe. Nosotros cobramos una tarifa de software escalonada según el monto de cada operación: 1.00% de $100 a $999.99, 0.83% de $1,000 a $9,999.99 y 0.50% desde $10,000 (+ I.V.A.). Así cubrimos el costo fijo de cada conversación de WhatsApp en tickets chicos y premiamos los tickets grandes. En cobros con QR la paga quien cobra; en pagos directos, solo quien recibe. Si el saldo llega a cero, pausamos cobros nuevos hasta que recargues.</p>
           <div class="mem-tip" id="mProfileTip">Tip: medio mes o mes completo según tu Perfil Financiero.</div>
         </details>
       </div>
     </section>
 
-    <!-- ============ AUDIT ============ -->
-    <section id="v-audit" class="hide">
-      <div class="card">
-        <div class="mod-hd"><span class="num">6</span><div><h3>Bitácora inmutable de auditoría</h3><div class="sub" style="margin:0">Hash SHA-256 encadenado · Regla 58a · resguardo ≥6 meses (SPEI) / 1 año (Canales)</div></div></div>
-        <div style="display:flex;gap:10px;margin:6px 0 14px;flex-wrap:wrap">
-          <button class="ghost sm" onclick="verifyChain()">Verificar integridad de la cadena</button>
-          <span id="chainStatus" style="align-self:center;font-size:13px"></span>
-        </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Timestamp</th><th>Operador</th><th>Acción</th><th>Categoría</th><th>Sev.</th><th>Hash (integridad)</th></tr></thead>
-        <tbody id="auditTable"></tbody></table></div>
-      </div>
-    </section>
   </main>
 </div>
 <div class="toast" id="toast"></div>
@@ -1875,19 +1890,39 @@ function loadFallback(kind){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js" onerror="loadFallback('jsqr')"></script>
 <script>
 /* ================= Modelo de datos (multiusuario) ================= */
-const FEE_RATE = 0.0005;
-const IVA_RATE = 0.16; // 16% I.V.A. sobre la tarifa de software
-const FEE_RATE_WITH_IVA = FEE_RATE * (1 + IVA_RATE);
+/* Modelo de negocio v5: tarifas escalonadas por monto de operación (tasa sobre el monto completo).
+   Se sobreescribe con la tabla que devuelve /membership (fuente de verdad: backend/app/config.py). */
+let FEE_TIERS = [
+  {min:0,     max:999.99,  rate:0.0100, segment:"Micro-comercio informal, taxis, tienditas"},
+  {min:1000,  max:9999.99, rate:0.0083, segment:"Comercio medio B2B, restaurantes y proveedores"},
+  {min:10000, max:null,    rate:0.0050, segment:"Corporativos medianos e integraciones API"},
+];
+let IVA_RATE = 0.16; // 16% I.V.A. sobre la tarifa de software
 function money2(n){return Math.round(Number(n)*100)/100;}
+function feeTier(amount){
+  const a=money2(amount);
+  let tier=FEE_TIERS[0];
+  for(const t of FEE_TIERS){ if(a>=t.min) tier=t; }
+  return tier;
+}
+function feeMaxRate(){ return Math.max(...FEE_TIERS.map(t=>t.rate)); }
+function feeMinRate(){ return Math.min(...FEE_TIERS.map(t=>t.rate)); }
+function fmtRate(r){ return (Number(r)*100).toFixed(2)+"%"; }
+function tierRangeLabel(t){
+  const f=n=>"$"+Number(n).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(t.max==null) return `Desde ${f(t.min)}`;
+  return t.min>0 ? `${f(t.min)} a ${f(t.max)}` : `Hasta ${f(t.max)}`;
+}
 function calcFee(amount){
-  const base=money2(amount*FEE_RATE);
+  const rate=feeTier(amount).rate;
+  const base=money2(amount*rate);
   const iva=money2(base*IVA_RATE);
   const total=money2(base+iva);
-  return {base,iva,total};
+  return {base,iva,total,rate};
 }
 const KYC_LIMITS = {1:"Explorando (aún sin operar)",2:"Recibe hasta $25,000 MXN/mes",3:"Recibe hasta $68,000 MXN/mes",4:"Sin techo de abonos"};
-// Base persistida: usuarios por alias + cobros/transacciones/bitácora globales
-let DB = { users:{}, charges:[], transactions:[], audit:[], session:null };
+// Base en memoria: directorio público + cobros y transacciones propias del usuario en sesión
+let DB = { users:{}, charges:[], transactions:[], session:null };
 // Vista activa de la sesión (referencia a los objetos del usuario en sesión)
 const state = { user:null, membership:null, vault:null };
 function me(){ return DB.users[DB.session]; }
@@ -1913,6 +1948,9 @@ async function api(path,{method="GET",body=null,auth=true}={}){
   if(!res.ok){
     let msg=res.statusText;
     if(data&&data.detail){ msg=(typeof data.detail==="string")?data.detail:(data.detail.message||JSON.stringify(data.detail)); }
+    if(res.status===403 && auth && TOKEN && data&&data.detail&&data.detail.code==="USER_INACTIVE"){
+      logout(); toast(msg,"err");
+    }
     throw {status:res.status,data,message:msg};
   }
   return data;
@@ -1938,9 +1976,7 @@ async function loadUsers(){
   list.forEach(u=>{
     const keep=prev[u.alias]||{};
     DB.users[u.alias]={alias:u.alias,client_type:u.client_type,kyc_level:u.kyc_level,created_at:u.created_at,
-      monthly_limit:u.monthly_limit, monthly_used:u.monthly_used,
-      monthly_remaining:u.monthly_remaining, limit_label:u.limit_label||"",
-      profile:{email:u.email||"",
+      profile:{email:"",
         full_name:u.client_type==="individual"?(u.display_name||""):"",
         business_name:u.client_type==="company"?(u.display_name||""):""},
       membership:keep.membership||{balance:0,status:"active"}, vault:keep.vault||[], favorites:keep.favorites||[]};
@@ -1956,6 +1992,8 @@ async function loadSession(){
   u.profile=u.profile||{}; u.profile.email=meU.email||u.profile.email||"";
   if(meU.display_name){ if(meU.client_type==="company") u.profile.business_name=meU.display_name; else u.profile.full_name=meU.display_name; }
   const m=await api("/membership"); u.membership={balance:m.balance,status:m.status};
+  if(Array.isArray(m.fee_tiers)&&m.fee_tiers.length) FEE_TIERS=m.fee_tiers;
+  if(typeof m.iva_rate==="number") IVA_RATE=m.iva_rate;
   const accs=await api("/vault/accounts");
   u.vault=accs.map(a=>({id:a.account_id,masked:a.clabe_masked,holder:a.account_holder,bank:a.bank_name,alias:a.alias||"Cuenta"}));
   try{ const favs=await api("/billing/favorites"); u.favorites=favs.map(f=>f.alias); }catch(e){ u.favorites=[]; }
@@ -2095,21 +2133,15 @@ async function loadCharges(){
   catch(e){ DB.charges=[]; console.warn("No se pudieron cargar cobros:",e.message); }
 }
 async function loadTransactions(){
-  try{ const list=await api("/compliance/transactions?scope=all");
+  try{ const list=await api("/compliance/transactions");
     DB.transactions=list.map(t=>({folio:t.folio,payer:t.payer,payee:t.payee,amount:t.amount,fee:t.fee,
       clave:t.clave,settled:t.settled?new Date(t.settled):new Date(),cep:t.cep,direct:t.direct})); }
   catch(e){ DB.transactions=[]; console.warn("No se pudieron cargar transacciones:",e.message); }
 }
-async function loadAudit(){
-  try{ const r=await api("/compliance/audit-logs");
-    DB.audit=(r.logs||[]).slice().reverse().map(l=>({ts:new Date(l.timestamp),operator:l.operator,
-      action:l.action,category:l.event_category,severity:l.severity,details:l.details,hash:l.integrity_hash})); }
-  catch(e){ DB.audit=[]; }
-}
 async function loadAll(){
   await loadUsers();
   await loadSession();
-  await Promise.all([loadCharges(),loadTransactions(),loadAudit(),refreshNotifications()]);
+  await Promise.all([loadCharges(),loadTransactions(),refreshNotifications()]);
 }
 // La bitácora la escribe el backend; en el cliente es no-op para no romper llamadas.
 async function audit(){ /* no-op: auditoría inmutable en la DB del sistema */ }
@@ -2145,6 +2177,21 @@ function parseMoneyInput(raw){
   const n=parseFloat(s);
   return Number.isFinite(n)?n:0;
 }
+/** Deja dígitos y un punto decimal. La coma se toma como decimal si trae 1 o 2 cifras. */
+function normalizeTypedMoney(raw){
+  let s=String(raw??"").replace(/[$\s]/g,"").replace(/[^\d.,]/g,"");
+  const hasComma=s.includes(","), hasDot=s.includes(".");
+  if(hasComma && hasDot){
+    if(s.lastIndexOf(",")>s.lastIndexOf(".")) s=s.replace(/\./g,"").replace(",",".");
+    else s=s.replace(/,/g,"");
+  }else if(hasComma && !hasDot){
+    const i=s.lastIndexOf(",");
+    const dec=s.slice(i+1);
+    if(dec.length<=2) s=s.slice(0,i).replace(/,/g,"")+"."+dec;
+    else s=s.replace(/,/g,"");
+  }
+  return s;
+}
 /** Formatea mientras se escribe (miles es-MX, hasta 2 decimales). */
 function formatMoneyTyping(raw){
   let s=String(raw??"").replace(/[^\d.]/g,"");
@@ -2161,17 +2208,17 @@ function formatMoneyTyping(raw){
   }
   return intFmt;
 }
-function bindMoneyInput(el, onChange){
+function bindMoneyInput(el, onChange, opts){
   if(!el || el.dataset.moneyBound==="1") return;
+  if(opts&&opts.currency){ bindFixedCentsInput(el, onChange); return; }
   el.dataset.moneyBound="1";
   el.addEventListener("input",()=>{
-    const cur=el.selectionStart;
+    const cur=el.selectionStart||0;
     const before=el.value;
     const next=formatMoneyTyping(before);
     if(next!==before){
       el.value=next;
-      const delta=next.length-before.length;
-      const pos=Math.max(0,(cur||0)+delta);
+      const pos=Math.max(0,cur+(next.length-before.length));
       try{ el.setSelectionRange(pos,pos); }catch(_){}
     }
     if(typeof onChange==="function") onChange(parseMoneyInput(el.value));
@@ -2181,6 +2228,106 @@ function bindMoneyInput(el, onChange){
     el.value=n>0?n.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2}):"";
     if(typeof onChange==="function") onChange(n);
   });
+}
+/** Pagos y cobros: $1,234.00 siempre, con dos centavos visibles mientras se escribe. */
+function bindFixedCentsInput(el, onChange){
+  el.dataset.moneyBound="1";
+  const st={int:"",cents:"",inCents:false};
+  const emit=()=>{ if(typeof onChange==="function") onChange(parseMoneyInput(el.value)); };
+  const paint=()=>{
+    const has=st.int!=="" || st.cents!=="" || st.inCents;
+    if(!has){ el.value=""; emit(); return; }
+    const intFmt=Number(st.int||"0").toLocaleString("es-MX");
+    const cents=(st.cents+"00").slice(0,2);
+    el.value="$"+intFmt+"."+cents;
+    const dot=el.value.indexOf(".");
+    const pos=st.inCents?dot+1+st.cents.length:dot;
+    try{ el.setSelectionRange(pos,pos); }catch(_){}
+    emit();
+  };
+  const reset=()=>{ st.int=""; st.cents=""; st.inCents=false; el.value=""; emit(); };
+  el._mxReset=reset;
+  const digit=(ch)=>{
+    if(st.inCents){ if(st.cents.length<2) st.cents+=ch; }
+    else st.int=(st.int==="0"?ch:(st.int+ch)).replace(/^0+(?=\d)/,"");
+  };
+  const back=()=>{
+    if(st.inCents){
+      if(st.cents.length) st.cents=st.cents.slice(0,-1);
+      else st.inCents=false;
+    }else st.int=st.int.slice(0,-1);
+  };
+  el.addEventListener("beforeinput",(e)=>{
+    const t=e.inputType||"";
+    if(t==="insertFromPaste"||t==="historyUndo"||t==="historyRedo") return;
+    if((t==="insertText"||t==="insertCompositionText") && e.data){
+      e.preventDefault();
+      if(el.selectionStart===0 && el.selectionEnd===el.value.length && el.value){
+        st.int=""; st.cents=""; st.inCents=false;
+      }
+      for(const ch of e.data){
+        if(ch>="0"&&ch<="9") digit(ch);
+        else if(ch==="."||ch===",") st.inCents=true;
+      }
+      paint();
+    }else if(t==="deleteContentBackward"||t==="deleteContentForward"){
+      e.preventDefault();
+      back();
+      paint();
+    }
+  });
+  el.addEventListener("paste",(e)=>{
+    e.preventDefault();
+    const text=(e.clipboardData||window.clipboardData).getData("text")||"";
+    const n=parseMoneyInput(text);
+    if(!(n>0)){ reset(); return; }
+    const [i,c]=n.toFixed(2).split(".");
+    st.int=String(parseInt(i,10));
+    st.cents=c==="00"?"":c;
+    st.inCents=false;
+    paint();
+  });
+  el.addEventListener("click",()=>{
+    const dot=el.value.indexOf(".");
+    if(dot>=0) st.inCents=(el.selectionStart||0)>dot;
+  });
+  el.addEventListener("keyup",(e)=>{
+    if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight"&&e.key!=="Home"&&e.key!=="End") return;
+    const dot=el.value.indexOf(".");
+    if(dot>=0) st.inCents=(el.selectionStart||0)>dot;
+  });
+  el.addEventListener("focus",()=>{
+    if(!el.value){
+      st.int="0"; st.cents=""; st.inCents=false;
+      setTimeout(()=>{ if(document.activeElement===el) paint(); },0);
+    }
+  });
+  el.addEventListener("blur",()=>{
+    const n=parseMoneyInput(el.value);
+    if(!(n>0)){ st.int=""; st.cents=""; st.inCents=false; el.value=""; }
+    else{
+      const [i,c]=n.toFixed(2).split(".");
+      st.int=String(parseInt(i,10));
+      st.cents=c==="00"?"":c;
+      st.inCents=false;
+      el.value=money(n);
+    }
+    emit();
+  });
+}
+function paintMoneyRead(id, n, verb){
+  const el=$(id); if(!el) return;
+  el.textContent=n>0?(verb+" "+money(n)+" MXN"):"Se verá como $0.00";
+}
+function bindCurrencyInput(el, readId, verb){
+  if(!el) return;
+  bindMoneyInput(el, n=>paintMoneyRead(readId, n, verb), {currency:true});
+}
+function clearMoneyField(el){
+  if(!el) return;
+  if(typeof el._mxReset==="function"){ el._mxReset(); return; }
+  el.value="";
+  el.dispatchEvent(new Event("input"));
 }
 function toast(msg,type=""){
   const t=$("#toast"); t.textContent=msg; t.className="toast show "+type;
@@ -2332,20 +2479,44 @@ const maskClabe = c=> "•".repeat(c.length-4)+c.slice(-4);
 const maskName = n=> (n||"").split(/\s+/).filter(Boolean).map(p=>p[0].toUpperCase()+"***").join(" ")||"B***";
 
 /* ================= Menú lateral (ver / ocultar) ================= */
+const NAV_KEY="superclabe_nav_open";
 function isMobileNav(){ return window.matchMedia("(max-width:960px)").matches; }
-function openNav(){ document.body.classList.add("nav-open"); }
-function closeNav(){ document.body.classList.remove("nav-open"); }
-function toggleNav(){ document.body.classList.toggle("nav-open"); }
-// Estado inicial según el ancho: visible en escritorio, oculto en móvil
-function initNav(){ if(isMobileNav()) closeNav(); else openNav(); }
-window.addEventListener("resize",()=>{ if(isMobileNav()) closeNav(); else openNav(); });
-// Cerrar con la tecla Escape
+function setNav(open, persist){
+  document.body.classList.toggle("nav-open", !!open);
+  const btn=document.getElementById("menuBtn");
+  if(btn){
+    btn.setAttribute("aria-expanded", open?"true":"false");
+    btn.title=open?"Ocultar menú":"Mostrar menú";
+  }
+  if(persist && !isMobileNav()){
+    try{ localStorage.setItem(NAV_KEY, open?"1":"0"); }catch(e){}
+  }
+}
+function openNav(){ setNav(true, false); }
+function closeNav(){ setNav(false, false); }
+function toggleNav(){ setNav(!document.body.classList.contains("nav-open"), true); }
+// Cierre pedido por el usuario: en escritorio se recuerda; en móvil solo cierra el panel
+function dismissNav(){ setNav(false, !isMobileNav()); }
+function initNav(){
+  if(isMobileNav()){ setNav(false, false); return; }
+  let saved="1";
+  try{ saved=localStorage.getItem(NAV_KEY)||"1"; }catch(e){}
+  setNav(saved!=="0", false);
+}
+let navModeMobile=isMobileNav();
+window.addEventListener("resize",()=>{
+  const mobile=isMobileNav();
+  if(mobile===navModeMobile) return;
+  navModeMobile=mobile;
+  if(mobile) setNav(false, false);
+  else initNav();
+});
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
     closeKycLimitModal();
     closeKycInfo();
     closeNotifPanel();
-    closeNav();
+    if(isMobileNav()) closeNav();
   }
 });
 
@@ -2357,8 +2528,7 @@ const titles={dashboard:["Inicio","Hola · aquí ves cómo va tu dinero"],
   favorites:["Favoritos","Tus contactos listos para cobrar o pagar"],
   billing:["Cobros","Crea un QR y pídele a alguien que te pague"],
   checkout:["Pagar","Elige cómo pagar o enviar dinero"],
-  membership:["Membresía","Tu “gasolina” para cobrar y recibir"],
-  audit:["Bitácoras","Historial seguro de lo que pasa en tu cuenta"]};
+  membership:["Membresía","Tu “gasolina” para cobrar y recibir"]};
 document.querySelectorAll("#nav a").forEach(a=>a.onclick=()=>{ show(a.dataset.v); if(isMobileNav()) closeNav(); });
 function show(v){
   if(typeof stopCam==="function") stopCam();
@@ -2378,7 +2548,6 @@ function show(v){
   if(v==="billing") renderBilling();
   if(v==="checkout") renderCheckoutSelect();
   if(v==="membership") renderMembership();
-  if(v==="audit") renderAudit();
 }
 
 /* ================= Chips ================= */
@@ -2673,7 +2842,7 @@ function renderDashTopCards(){
   const bal=Math.max(0, Number(m.balance)||0);
   const balanceInit=bal+totalFees;
   const pctUsed=balanceInit>0?Math.min(100,(totalFees/balanceInit)*100):0;
-  const capacityMxn=Math.max(0, bal>0?(bal/FEE_RATE_WITH_IVA):0);
+  const capacityMxn=Math.max(0, bal>0?(bal/(feeMaxRate()*(1+IVA_RATE))):0);
   const capacityLbl=money(capacityMxn).replace(/[-−]/g,""); // sin signo negativo
   const recentTx=txAll.slice().sort((a,b)=>new Date(b.settled)-new Date(a.settled)).slice(0,10);
   const balColor=m.status==='blocked'?'var(--danger)':'var(--brand)';
@@ -2683,12 +2852,12 @@ function renderDashTopCards(){
     <div class="card" style="border-left:3px solid var(--brand)">
       <h3 style="margin:0 0 2px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Tu membresía</h3>
       <div style="font-size:30px;font-weight:800;color:${balColor};margin:6px 0 2px">${money(bal)} <span style="font-size:14px;font-weight:600;color:var(--muted)">MXN</span></div>
-      <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px">${statusLbl} · tarifa 0.05% + I.V.A.</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px">${statusLbl} · tarifa escalonada ${fmtRate(feeMaxRate())}–${fmtRate(feeMinRate())} + I.V.A.</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Ya usaste: <b style="color:var(--txt)">${money(totalFees)} MXN</b> <span style="font-size:10.5px">(en tarifas)</span></div>
       <div class="mship-bar"><i style="width:${pctUsed}%;background:${barColor}"></i></div>
       <div class="mship-limit-row">
         <span class="mship-used">${pctUsed.toFixed(1)}% usado</span>
-        <span class="mship-limit" title="Con tu saldo actual puedes cubrir este volumen de operaciones">cubre hasta ${capacityLbl} MXN en operaciones</span>
+        <span class="mship-limit" title="Calculado con la tasa más alta (1.00%). Con tickets de $1,000 o más te alcanza para más.">cubre al menos ${capacityLbl} MXN en operaciones</span>
       </div>
       ${m.status==='blocked'?'<div class="note danger" style="margin-top:8px;font-size:11px">Sin saldo no puedes cobrar. Recarga y listo.</div>':''}
       <button class="blue sm" style="margin-top:12px;width:100%" onclick="show('membership')">Ponerle más saldo</button>
@@ -2844,9 +3013,9 @@ const KYC_FIELDS={
        {id:"kSelfie",label:"Selfie (para confirmar que eres tú)",type:"photo",cam:"user"}],
     3:[{id:"kProof",label:"Comprobante de domicilio (recibo)",type:"photo",cam:"environment"}],
     4:[{id:"kRfc",label:"RFC (con homoclave)",ph:"PELJ900101AB9",max:13},
-       {id:"kCsf",label:"Constancia de Situación Fiscal (PDF)",ph:"csf.pdf"},
-       {id:"kCer",label:"e.firma SAT — archivo .cer",ph:"fiel.cer"},
-       {id:"kKey",label:"e.firma SAT — archivo .key",ph:"fiel.key"},
+       {id:"kCsf",label:"Constancia de Situación Fiscal (PDF)",type:"file",accept:".pdf,application/pdf"},
+       {id:"kCer",label:"e.firma SAT — archivo .cer",type:"file",accept:".cer,.crt,application/pkix-cert,application/x-x509-ca-cert"},
+       {id:"kKey",label:"e.firma SAT — archivo .key",type:"file",accept:".key"},
        {id:"kEfPass",label:"Contraseña de la e.firma",type:"password"}]
   },
   company:{
@@ -2858,10 +3027,10 @@ const KYC_FIELDS={
        {id:"kFront",label:"Identificación del representante — frente",type:"photo",cam:"environment"},
        {id:"kBack",label:"Identificación del representante — reverso",type:"photo",cam:"environment"},
        {id:"kSelfie",label:"Selfie del representante (para confirmar identidad)",type:"photo",cam:"user"}],
-    3:[{id:"kActa",label:"Acta constitutiva (PDF)",ph:"acta_constitutiva.pdf"}],
-    4:[{id:"kCsf",label:"Constancia de Situación Fiscal (PDF)",ph:"csf.pdf"},
-       {id:"kCer",label:"e.firma de la empresa — archivo .cer",ph:"fiel.cer"},
-       {id:"kKey",label:"e.firma de la empresa — archivo .key",ph:"fiel.key"},
+    3:[{id:"kActa",label:"Acta constitutiva (PDF)",type:"file",accept:".pdf,application/pdf"}],
+    4:[{id:"kCsf",label:"Constancia de Situación Fiscal (PDF)",type:"file",accept:".pdf,application/pdf"},
+       {id:"kCer",label:"e.firma de la empresa — archivo .cer",type:"file",accept:".cer,.crt,application/pkix-cert,application/x-x509-ca-cert"},
+       {id:"kKey",label:"e.firma de la empresa — archivo .key",type:"file",accept:".key"},
        {id:"kEfPass",label:"Contraseña de la e.firma",type:"password"}]
   }
 };
@@ -2872,12 +3041,14 @@ const KYC_REQ={
 function fieldHTML(f){
   if(f.type==="select") return `<label>${f.label}</label><select id="${f.id}"><option value="">Selecciona…</option>${f.opts.map(o=>`<option>${o}</option>`).join("")}</select>`;
   if(f.type==="photo") return photoFieldHTML(f);
+  if(f.type==="file") return fileFieldHTML(f);
   const t=f.type==="date"?"date":(f.type==="password"?"password":"text");
   return `<label>${f.label}</label><input id="${f.id}" type="${t}"${f.max?` maxlength="${f.max}"`:""}${f.ph?` placeholder="${f.ph}"`:""}>`;
 }
 
 /* ---- Captura de documentos/selfie: subir archivo o tomar foto ---- */
 const kycPhotos={};                 // id -> dataURL capturado en el formulario actual
+const kycDocs={};                   // id -> {name, data} de PDF, .cer y .key
 const photoStreams={};              // id -> MediaStream activo de la cámara
 function photoFieldHTML(f){
   const facing=f.cam||"environment";
@@ -2935,10 +3106,48 @@ function stopPhotoCam(id){
   const cam=$("#"+id+"_cam"); if(cam) cam.classList.add("hide");
 }
 function stopAllPhotoCams(){ Object.keys(photoStreams).forEach(stopPhotoCam); }
+function fileFieldHTML(f){
+  const accept=f.accept?` accept="${f.accept}"`:"";
+  return `<label>${f.label}</label>
+  <div class="photo-field">
+    <input type="file" id="${f.id}"${accept} onchange="onKycDoc('${f.id}', this.files&&this.files[0])">
+    <div id="${f.id}_prev" class="photo-prev"></div>
+  </div>`;
+}
+function readAsDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      let url=String(r.result||"");
+      if(url.startsWith("data:;base64,")||url.startsWith("data:base64,")){
+        url="data:application/octet-stream;base64,"+url.slice(url.indexOf(",")+1);
+      }
+      resolve(url);
+    };
+    r.onerror=()=>reject(new Error("lectura"));
+    r.readAsDataURL(file);
+  });
+}
+async function onKycDoc(id, file){
+  const prev=$("#"+id+"_prev");
+  if(!file){ delete kycDocs[id]; if(prev) prev.innerHTML=""; return; }
+  if(file.size>2*1024*1024){ toast("El archivo supera 2 MB","err"); const el=$("#"+id); if(el) el.value=""; return; }
+  try{
+    const data=await readAsDataURL(file);
+    kycDocs[id]={name:file.name||"adjunto", data};
+    if(prev){
+      prev.textContent="";
+      const ok=document.createElement("span");
+      ok.className="photo-ok";
+      ok.textContent="✓ "+(file.name||"archivo");
+      prev.appendChild(ok);
+    }
+  }catch(e){ toast("No se pudo leer el archivo","err"); }
+}
 function renderKycReqTable(){ /* replaced by renderKyc pf-wizard */ }
 function renderKyc(){
   const u=state.user, type=u.client_type, lvl=u.kyc_level;
-  stopAllPhotoCams(); Object.keys(kycPhotos).forEach(k=>delete kycPhotos[k]);
+  stopAllPhotoCams(); Object.keys(kycPhotos).forEach(k=>delete kycPhotos[k]); Object.keys(kycDocs).forEach(k=>delete kycDocs[k]);
 
   const initials=(u.profile.full_name||u.profile.business_name||u.alias||'U').split(/\s+/).map(w=>w[0]).join('').substring(0,2).toUpperCase();
   const name=u.profile.full_name||u.profile.business_name||u.alias;
@@ -3018,9 +3227,9 @@ function renderKyc(){
         let i=0;
         while(i<fields.length){
           const f=fields[i];
-          const isWide=['date','select','photo','password'].includes(f.type)||singles.includes(f.id);
+          const isWide=['date','select','photo','password','file'].includes(f.type)||singles.includes(f.id);
           const nextF=fields[i+1];
-          const nextWide=nextF&&(['date','select','photo','password'].includes(nextF.type)||singles.includes(nextF.id));
+          const nextWide=nextF&&(['date','select','photo','password','file'].includes(nextF.type)||singles.includes(nextF.id));
           if(!isWide && nextF && !nextWide){
             html+=`<div class="pf-field-row">${fieldHTML(f)}${fieldHTML(nextF)}</div>`;
             i+=2;
@@ -3057,24 +3266,38 @@ async function upgradeKyc(target){
       if(!kycPhotos[f.id]){ toast("Falta: "+f.label+" (sube o toma la foto)","err"); return; }
       continue;
     }
+    if(f.type==="file"){
+      if(!kycDocs[f.id]){ toast("Falta: "+f.label,"err"); return; }
+      continue;
+    }
     const el=$("#"+f.id); const v=((el&&el.value)||"").trim();
     if(!v){ toast("Falta: "+f.label,"err"); el&&el.focus(); return; }
     if(f.id==="kCurp" && v.length!==18){ toast("La CURP debe tener 18 caracteres","err"); return; }
     if(f.id==="kRfc" && (v.length<12||v.length>13)){ toast("El RFC debe tener 12–13 caracteres","err"); return; }
   }
-  // Arma la petición al backend con los datos de identidad capturados
-  const nameVal=(($("#kName")||{}).value||"").trim();
-  const curpVal=(($("#kCurp")||{}).value||"").trim();
-  const rfcVal=(($("#kRfc")||{}).value||"").trim();
-  const repVal=(($("#kRep")||{}).value||"").trim();
-  const body={target_level:target};
-  if(type==="individual"){ if(curpVal) body.curp=curpVal; if(nameVal) body.full_name=nameVal; }
-  else { if(rfcVal) body.rfc=rfcVal; if(nameVal) body.business_name=nameVal; if(repVal) body.representative_name=repVal; }
-  // Marcadores de documentos capturados (las imágenes se validan en el cliente)
+  const body={target_level:target, files:[]};
+  const textMap={kCurp:"curp",kRfc:"rfc",kBirth:"birth_date",kGender:"gender",kAddr:"address",kDocType:"id_doc_type",kRep:"representative_name"};
+  for(const f of KYC_FIELDS[type][target]){
+    if(f.type==="photo" && kycPhotos[f.id]){
+      body.files.push({id:f.id, label:f.label, name:f.id+".jpg", data:kycPhotos[f.id]});
+      continue;
+    }
+    if(f.type==="file" && kycDocs[f.id]){
+      body.files.push({id:f.id, label:f.label, name:kycDocs[f.id].name, data:kycDocs[f.id].data});
+      continue;
+    }
+    if(f.type==="password") continue;
+    const v=((($("#"+f.id)||{}).value)||"").trim();
+    if(!v) continue;
+    if(f.id==="kName"){ body[type==="individual"?"full_name":"business_name"]=v; continue; }
+    if(textMap[f.id]) body[textMap[f.id]]=v;
+  }
   if(kycPhotos.kFront) body.id_front_path="id_frente.jpg";
   if(kycPhotos.kBack) body.id_back_path="id_reverso.jpg";
   if(kycPhotos.kSelfie) body.selfie_liveness_path="liveness.jpg";
   if(kycPhotos.kProof) body.csf_pdf_url="comprobante.jpg";
+  const csf=(body.files||[]).find(f=>f.id==="kCsf"||f.id==="kActa");
+  if(csf) body.csf_pdf_url=String(csf.name||"").slice(0,180);
   try{ await api("/kyc/upgrade",{method:"POST",body}); }
   catch(e){ toast(e.message||"No se pudo actualizar el Perfil Financiero","err"); return; }
   stopAllPhotoCams();
@@ -3255,7 +3478,7 @@ function renderFavoritesModuleSearch(){
   let list=Object.keys(DB.users).filter(a=>a!==DB.session).map(a=>{
     const d=userDisplay(a);
     return {alias:a,...d,fav:favs.includes(a)};
-  }).filter(x=>x.alias.toLowerCase().includes(q)||x.nm.toLowerCase().includes(q)||x.mail.toLowerCase().includes(q));
+  }).filter(x=>x.alias.toLowerCase().includes(q)||x.nm.toLowerCase().includes(q));
   list.sort((a,b)=>(b.fav-a.fav)||a.alias.localeCompare(b.alias));
   list=list.slice(0,12);
   box.innerHTML = list.length ? list.map(x=>`
@@ -3352,7 +3575,7 @@ function wizValidate(step){
       toast("Elige a quién le vas a cobrar","err");return false;}
   }
   if(step===2){
-    if(billForm.amountMode==="FIXED" && !(parseFloat($("#bAmount").value)>0)){toast("Pon un monto válido","err");return false;}
+    if(billForm.amountMode==="FIXED" && !(parseMoneyInput($("#bAmount").value)>0)){toast("Pon un monto válido","err");return false;}
     if(!$("#bConcept").value.trim()){toast("Cuéntanos el concepto del cobro","err");return false;}
   }
   if(step===3){
@@ -3415,7 +3638,7 @@ function updateFreqHint(){
 function renderWizSummary(){
   const acc=state.vault.find(a=>a.id===$("#bAccount").value)||{};
   const tipo=billForm.type==="TARGETED"?`Personalizado → ${billForm.targetAlias}`:"Libre (cualquiera)";
-  const monto=billForm.amountMode==="OPEN"?"Libre (pagador decide)":money(parseFloat($("#bAmount").value)||0);
+  const monto=billForm.amountMode==="OPEN"?"Libre (pagador decide)":money(parseMoneyInput($("#bAmount").value));
   const usos=billForm.usesMode==="MULTI"?`${parseInt($("#bUses").value)||0} pagos`:"1 pago";
   const uName={min:"min",hrs:"hrs",dias:"días"}[$("#bExpUnit").value];
   const vig=`${parseInt($("#bExpVal").value)||0} ${uName}`;
@@ -3499,7 +3722,7 @@ function renderUserSearch(){
   let list=Object.keys(DB.users).filter(a=>a!==DB.session).map(a=>{
     const d=userDisplay(a);
     return {alias:a,...d,fav:favs.includes(a)};
-  }).filter(x=>!x.fav && (x.alias.toLowerCase().includes(q)||x.nm.toLowerCase().includes(q)||x.mail.toLowerCase().includes(q)));
+  }).filter(x=>!x.fav && (x.alias.toLowerCase().includes(q)||x.nm.toLowerCase().includes(q)));
   list.sort((a,b)=>a.alias.localeCompare(b.alias));
   list=list.slice(0,8);
   box.innerHTML = list.length ? list.map(x=>`
@@ -3608,7 +3831,7 @@ async function createCharge(){
   const openAmount = billForm.amountMode==="OPEN";
   let amount=0;
   if(!openAmount){
-    amount=parseFloat($("#bAmount").value);
+    amount=Math.round(parseMoneyInput($("#bAmount").value)*100)/100;
     if(!(amount>0)){toast("Monto inválido","err");return;}
     // Tope de abonos del beneficiario (quien cobra / recibirá)
     const lim=kycAmountCheck(amount,"recibir este cobro");
@@ -3655,7 +3878,8 @@ async function createCharge(){
   const c=mapCharge(out); c.expVal=expVal; c.expUnit=expUnit;
   c.showPayee=showPayee; c.payeeName=myDisplayName();
   // Reinicia el asistente para el siguiente cobro
-  ["bAmount","bRef","bConcept","bPin"].forEach(i=>$("#"+i).value="");
+  ["bRef","bConcept","bPin"].forEach(i=>{ const el=$("#"+i); if(el) el.value=""; });
+  clearMoneyField($("#bAmount"));
   $("#bShowPayee").checked=false;
   billForm.type="OPEN"; billForm.targetAlias=null; billForm.amountMode="FIXED";
   billForm.usesMode="SINGLE"; billForm.freq="NONE"; billForm.step=1;
@@ -3678,37 +3902,73 @@ function chargePayload(c){
 function chargePayloadScan(c){
   return JSON.stringify({v:1,type:"CODI_CHARGE",folio:c.folio});
 }
-function renderQRImage(box,text,hi){
+function renderQRImage(box,text,caption){
   if(!window.QRCode || !QRCode.CorrectLevel) return false;
-  // Alta resolución + zona de silencio amplia → mejor lectura con cámara del celular
-  const size=Math.min(440, Math.max(320, Math.round((Math.min(window.innerWidth||360,420))*0.82)));
-  // Con etiqueta central: máxima corrección. Sin ella: Q/H para resistencia a blur/ángulo.
-  const levels = hi
-    ? [QRCode.CorrectLevel.H, QRCode.CorrectLevel.Q]
-    : [QRCode.CorrectLevel.Q, QRCode.CorrectLevel.H, QRCode.CorrectLevel.M];
-  for(const lvl of levels){
-    try{
-      box.innerHTML="";
-      new QRCode(box,{
-        text:String(text||""),
-        width:size,
-        height:size,
-        colorDark:"#0E3B43",
-        colorLight:"#ffffff",
-        correctLevel:lvl,
-      });
-      const cv=box.querySelector("canvas");
-      const im=box.querySelector("img");
-      if(cv||im){
-        if(im){
-          im.alt="Código QR de cobro Súper CLABE";
-          im.style.imageRendering="pixelated";
-        }
-        return true;
-      }
-    }catch(e){ /* reintenta con otro nivel de corrección */ }
+  const host=document.createElement("div");
+  host.style.cssText="position:fixed;left:-9999px;top:0;width:128px;height:128px";
+  document.body.appendChild(host);
+  let model=null;
+  try{
+    const qr=new QRCode(host,{
+      text:String(text||""),
+      width:128, height:128,
+      colorDark:"#000000", colorLight:"#ffffff",
+      correctLevel:QRCode.CorrectLevel.M,
+    });
+    model=qr._oQRCode;
+  }catch(e){ host.remove(); return false; }
+  if(!model || typeof model.getModuleCount!=="function" || typeof model.isDark!=="function"){
+    host.remove(); return false;
   }
-  return false;
+  const n=model.getModuleCount();
+  const cell=12, quiet=4;
+  const qrPx=(n+quiet*2)*cell;
+  const cap=String(caption||"").trim().replace(/\s+/g," ");
+  const capH=cap?Math.round(cell*8):0;
+  const cv=document.createElement("canvas");
+  cv.width=qrPx; cv.height=qrPx+capH;
+  const ctx=cv.getContext("2d");
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle="#ffffff";
+  ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.fillStyle="#000000";
+  for(let r=0;r<n;r++){
+    for(let c=0;c<n;c++){
+      if(model.isDark(r,c)) ctx.fillRect((c+quiet)*cell,(r+quiet)*cell,cell,cell);
+    }
+  }
+  if(cap){
+    const maxW=qrPx-cell*4;
+    let size=Math.round(cell*2.1);
+    let name=cap;
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.font=`800 ${size}px system-ui,Arial,sans-serif`;
+    while(size>16 && ctx.measureText(name).width>maxW){
+      size-=1;
+      ctx.font=`800 ${size}px system-ui,Arial,sans-serif`;
+    }
+    if(ctx.measureText(name).width>maxW){
+      while(name.length>1 && ctx.measureText(name+"…").width>maxW) name=name.slice(0,-1);
+      name+="…";
+    }
+    const y=qrPx+capH*0.36;
+    ctx.fillStyle="#2A8D92";
+    ctx.font=`700 ${Math.round(size*0.62)}px system-ui,Arial,sans-serif`;
+    ctx.fillText("Pagar a:", qrPx/2, y);
+    ctx.fillStyle="#0E3B43";
+    ctx.font=`800 ${size}px system-ui,Arial,sans-serif`;
+    ctx.fillText(name, qrPx/2, y+size+4);
+  }
+  host.remove();
+  const url=cv.toDataURL("image/png");
+  box.innerHTML="";
+  const im=document.createElement("img");
+  im.alt="Código QR de cobro Súper CLABE";
+  im.src=url;
+  box.appendChild(im);
+  box.dataset.qr=url;
+  return true;
 }
 function retryPendingQR(){ if(pendingQRFolio) showQRByFolio(pendingQRFolio); }
 function showQR(c){
@@ -3755,17 +4015,11 @@ function showQR(c){
 
   box.innerHTML="";
   const scanText=chargePayloadScan(c);
-  const ok=renderQRImage(box, scanText, !!c.showPayee);
+  const caption=c.showPayee?(c.payeeName||c.holder||""):"";
+  const ok=renderQRImage(box, scanText, caption);
   if(ok){
     pendingQRFolio=null;
-    const cv=box.querySelector("canvas");
-    const im=box.querySelector("img");
-    if(c.showPayee && cv){
-      // Overlay pequeño: no cubre más del ~18% del área central
-      overlayPayee(box,c.payeeName||c.holder);
-      if(im) im.src=cv.toDataURL("image/png");
-    }
-    currentQR.dataUrl=cv?cv.toDataURL("image/png"):(im?im.src:null);
+    currentQR.dataUrl=box.dataset.qr||null;
   } else {
     pendingQRFolio=c.folio;
     box.innerHTML=`<div style="color:var(--brand-deep);font-size:12px;max-width:220px;line-height:1.55;text-align:left;padding:8px">
@@ -3776,112 +4030,6 @@ function showQR(c){
   openQRModal();
 }
 let currentQR=null, pendingQRFolio=null;
-// Dibuja "Pagar a: <nombre>" al centro del QR sin desbordar (móvil / desktop)
-function overlayPayee(box,name){
-  const cv=box.querySelector("canvas"); if(!cv||!name) return;
-  const ctx=cv.getContext("2d");
-  const W=cv.width||210, H=cv.height||W;
-  const pad=Math.max(8, Math.round(W*0.04));
-  const maxBadgeW=W*0.68;
-  const textMaxW=maxBadgeW - pad*2;
-  const label="Pagar a:";
-  const raw=(name||"").trim().replace(/\s+/g," ");
-  if(!raw) return;
-
-  const fitFont=(text, weight, maxPx, minPx)=>{
-    let size=maxPx;
-    while(size>minPx){
-      ctx.font=`${weight} ${size}px system-ui,-apple-system,Arial,sans-serif`;
-      if(ctx.measureText(text).width<=textMaxW) return size;
-      size-=1;
-    }
-    return minPx;
-  };
-
-  // Parte el nombre en hasta 2 líneas que quepan en el badge
-  const wrapName=(text, fontPx)=>{
-    ctx.font=`800 ${fontPx}px system-ui,-apple-system,Arial,sans-serif`;
-    if(ctx.measureText(text).width<=textMaxW) return [text];
-    const words=text.split(" ");
-    if(words.length===1){
-      let s=text;
-      while(s.length>1 && ctx.measureText(s+"…").width>textMaxW) s=s.slice(0,-1);
-      return [s+(s===text?"":"…")];
-    }
-    let line1="", line2="", splitAt=-1;
-    for(let i=0;i<words.length;i++){
-      const trial=line1?line1+" "+words[i]:words[i];
-      if(ctx.measureText(trial).width<=textMaxW) line1=trial;
-      else{ splitAt=i; break; }
-    }
-    if(splitAt<0) return [line1||text];
-    line2=words.slice(splitAt).join(" ");
-    if(ctx.measureText(line2).width>textMaxW){
-      let s=line2;
-      while(s.length>1 && ctx.measureText(s+"…").width>textMaxW) s=s.slice(0,-1);
-      line2=s+"…";
-    }
-    return line1?[line1,line2]:[line2];
-  };
-
-  const labelSize=fitFont(label, 700, Math.round(W*0.042), Math.round(W*0.028));
-  let nameSize=Math.round(W*0.048);
-  let lines=wrapName(raw, nameSize);
-  // Si 2 líneas siguen anchas, reduce fuente y reintenta
-  while(nameSize>Math.round(W*0.030)){
-    lines=wrapName(raw, nameSize);
-    const widest=Math.max(...lines.map(l=>{
-      ctx.font=`800 ${nameSize}px system-ui,-apple-system,Arial,sans-serif`;
-      return ctx.measureText(l).width;
-    }));
-    if(widest<=textMaxW) break;
-    nameSize-=1;
-  }
-  // Truncado final por línea si aún desborda
-  lines=lines.map(l=>{
-    ctx.font=`800 ${nameSize}px system-ui,-apple-system,Arial,sans-serif`;
-    if(ctx.measureText(l).width<=textMaxW) return l;
-    let s=l;
-    while(s.length>1 && ctx.measureText(s+"…").width>textMaxW) s=s.slice(0,-1);
-    return s+"…";
-  });
-
-  const lineGap=Math.round(nameSize*1.2);
-  const labelH=Math.round(labelSize*1.15);
-  const namesH=lines.length*lineGap;
-  const bh=Math.min(H*0.22, pad*2 + labelH + 4 + namesH);
-  const bw=Math.min(maxBadgeW, Math.max(
-    textMaxW*0.5,
-    Math.max(
-      (()=>{ ctx.font=`700 ${labelSize}px system-ui,-apple-system,Arial,sans-serif`; return ctx.measureText(label).width; })(),
-      ...lines.map(l=>{ ctx.font=`800 ${nameSize}px system-ui,-apple-system,Arial,sans-serif`; return ctx.measureText(l).width; })
-    ) + pad*2
-  ));
-  const bx=(W-bw)/2, by=(H-bh)/2;
-  const r=Math.max(6, W*0.028);
-
-  ctx.fillStyle="#ffffff";
-  ctx.strokeStyle="#2A8D92";
-  ctx.lineWidth=Math.max(2, W*0.012);
-  ctx.beginPath();
-  ctx.moveTo(bx+r,by); ctx.arcTo(bx+bw,by,bx+bw,by+bh,r); ctx.arcTo(bx+bw,by+bh,bx,by+bh,r);
-  ctx.arcTo(bx,by+bh,bx,by,r); ctx.arcTo(bx,by,bx+bw,by,r); ctx.closePath();
-  ctx.fill(); ctx.stroke();
-
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-  ctx.fillStyle="#2A8D92";
-  ctx.font=`700 ${labelSize}px system-ui,-apple-system,Arial,sans-serif`;
-  const labelY=by + pad + labelH/2;
-  ctx.fillText(label, W/2, labelY, textMaxW);
-
-  ctx.fillStyle="#0E3B43";
-  ctx.font=`800 ${nameSize}px system-ui,-apple-system,Arial,sans-serif`;
-  const nameStart=labelY + labelH*0.55 + lineGap*0.55;
-  lines.forEach((line,i)=>{
-    ctx.fillText(line, W/2, nameStart + i*lineGap, textMaxW);
-  });
-}
 function showQRByFolio(folio){const c=findCharge(folio);if(!c)return;if(!c.payload)c.payload=chargePayload(c);showQR(c);}
 // Obtiene el PNG del QR como dataURL (canvas o imagen renderizada)
 function currentQRDataURL(){
@@ -4056,11 +4204,11 @@ function renderSendSearch(){
     return {alias:a,u,nm,mail,fav:favs.includes(a)};
   });
   if(!q){
-    box.innerHTML=`<div class="hint">Escribe alias, nombre o correo. Los favoritos ya aparecen arriba.</div>`;
+    box.innerHTML=`<div class="hint">Escribe celular (alias) o nombre. Los favoritos ya aparecen arriba.</div>`;
     return;
   }
   // En búsqueda, evita repetir favoritos (ya están listados arriba)
-  list=list.filter(x=>!x.fav && (x.alias.toLowerCase().includes(q)||x.nm.toLowerCase().includes(q)||x.mail.toLowerCase().includes(q)));
+  list=list.filter(x=>!x.fav && (x.alias.toLowerCase().includes(q)||x.nm.toLowerCase().includes(q)));
   list.sort((a,b)=>a.alias.localeCompare(b.alias));
   list=list.slice(0,8);
   box.innerHTML = list.length ? list.map(x=>{
@@ -4107,7 +4255,7 @@ function buildSendResultHtml(r, {forModal=false}={}){
         <div class="pay-result-kv"><span>Destinatario</span><b>${maskName(tnm||target)}<br><span class="mono" style="font-size:12px">${target}</span></b></div>
         <div class="pay-result-kv"><span>Concepto</span><b>${concept}</b></div>
         <div class="pay-result-kv"><span>Clave de rastreo</span><b class="mono" style="font-size:12px">${r.clave_rastreo||"—"}</b></div>
-        <div class="pay-result-kv"><span>Comisión receptor</span><b>${money(r.base_fee!=null?r.base_fee:r.recipient_fee)}</b></div>
+        <div class="pay-result-kv"><span>Comisión receptor${r.fee_rate!=null?` (${fmtRate(r.fee_rate)})`:""}</span><b>${money(r.base_fee!=null?r.base_fee:r.recipient_fee)}</b></div>
         <div class="pay-result-kv"><span>I.V.A. receptor</span><b>${money(r.iva!=null?r.iva:0)}</b></div>
         <div class="pay-result-kv"><span>Tu comisión</span><b style="color:var(--ok)">$0.00</b></div>
         <div class="pay-result-kv"><span>Estado</span><b style="color:var(--brand)">LIQUIDADO</b></div>
@@ -4145,7 +4293,7 @@ function startAnotherDirectPayment(){
   lastSendResult=null;
   sendForm.targetAlias=null;
   const amt=$("#sendAmount"), concept=$("#sendConcept"), search=$("#sendUserSearch"), sel=$("#sendTargetSel");
-  if(amt) amt.value="";
+  if(amt) clearMoneyField(amt);
   if(concept) concept.value="";
   if(search) search.value="";
   if(sel){ sel.classList.add("hide"); sel.innerHTML=""; }
@@ -4155,7 +4303,7 @@ async function sendDirectPayment(){
   const target=sendForm.targetAlias;
   if(!target||!DB.users[target]){toast("Selecciona un usuario destinatario","err");return;}
   if(target===DB.session){toast("No puedes enviarte pagos a ti mismo","err");return;}
-  const amount=Math.round(parseFloat($("#sendAmount").value)*100)/100;
+  const amount=Math.round(parseMoneyInput($("#sendAmount").value)*100)/100;
   if(!(amount>0)){toast("Escribe un monto válido","err");return;}
   // Emisor: solo nivel mínimo. Receptor: tope de abonos del mes.
   const op=kycOperateCheck("enviar pagos");
@@ -4177,12 +4325,13 @@ async function sendDirectPayment(){
     clave_rastreo:r.clave_rastreo,
     base_fee:r.base_fee,
     iva:r.iva,
+    fee_rate:r.fee_rate,
     recipient_fee:r.recipient_fee,
     cep_url:r.cep_url,
   });
   // Limpia campos del formulario (el resultado vive en el paso 3 / modal)
   sendForm.targetAlias=null;
-  $("#sendAmount").value=""; $("#sendConcept").value=""; $("#sendUserSearch").value="";
+  clearMoneyField($("#sendAmount")); $("#sendConcept").value=""; $("#sendUserSearch").value="";
   $("#sendTargetSel").classList.add("hide");
 }
 
@@ -4278,7 +4427,7 @@ function showPayer(c){
         ${targetInfo}
         <div class="lbl">Monto</div>
         ${openAmt
-          ? `<input id="coAmount" type="number" placeholder="Escribe el monto a pagar" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;font-size:20px;font-weight:700;text-align:center;margin:4px 0 12px">`
+          ? `<div class="money-field" style="background:#fff;margin:4px 0 0"><span class="pfx">$</span><input id="coAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Monto a pagar en pesos" style="background:#fff;color:#0f172a;font-size:20px;font-weight:800"></div><p class="money-read" id="coAmountRead" style="text-align:center;margin-bottom:12px">Se verá como $0.00</p>`
           : `<div class="amt">${money(c.amount)}</div>`}
         <div class="lbl">Concepto</div><div class="val">${c.concept}</div>
         <div class="row" style="gap:16px">
@@ -4292,6 +4441,7 @@ function showPayer(c){
       </div>
     </div>`;
   $("#payBox").scrollIntoView({behavior:"smooth",block:"nearest"});
+  if(openAmt) bindCurrencyInput($("#coAmount"), "coAmountRead", "Vas a pagar");
 }
 async function payCharge(folio){
   const c=lastScanned;
@@ -4300,7 +4450,7 @@ async function payCharge(folio){
   if(c.requiresPin){ body.pin=($("#coPin")||{}).value||""; }
   let payAmt=c.openAmount?null:Number(c.amount);
   if(c.openAmount){
-    const a=parseFloat(($("#coAmount")||{}).value);
+    const a=parseMoneyInput(($("#coAmount")||{}).value);
     if(!(a>0)){toast("Escribe un monto válido a pagar","err");return;}
     body.pay_amount=Math.round(a*100)/100;
     payAmt=body.pay_amount;
@@ -4333,7 +4483,7 @@ async function payCharge(folio){
       <div class="bd">
         <div class="amt" style="color:var(--brand)">${money(r.liquidated_amount)}</div>
         <div class="kv"><span>Clave de rastreo</span><b class="mono">${r.clave_rastreo}</b></div>
-        <div class="kv"><span>Comisión 0.05% (emisor)</span><b>${money(r.base_fee!=null?r.base_fee:r.calculated_fee)}</b></div>
+        <div class="kv"><span>Comisión ${fmtRate(r.fee_rate!=null?r.fee_rate:calcFee(r.liquidated_amount).rate)} (emisor)</span><b>${money(r.base_fee!=null?r.base_fee:r.calculated_fee)}</b></div>
         <div class="kv"><span>I.V.A. 16% (emisor)</span><b>${money(r.iva!=null?r.iva:0)}</b></div>
         <div class="kv"><span>Total debitado</span><b>${money(r.calculated_fee)}</b></div>
         <div class="kv"><span>Folio CoDi</span><b class="mono" style="font-size:12px">${r.folio_codi}</b></div>
@@ -4351,8 +4501,11 @@ const KYC_MONTHLY_MXN = {1:0, 2:25000, 3:68000, 4:null};
 /** Volumen de referencia para Nivel 4 (sin tope) al sugerir membresía. */
 const KYC_L4_REF_VOLUME = 250000;
 
+/** Membresía que cubre un volumen mensual. Con tarifas escalonadas el costo depende del tamaño
+    de cada ticket, así que se usa la tasa más alta (tickets chicos) para garantizar cobertura. */
 function membershipFeeForVolume(volume){
-  return calcFee(Math.max(0, Number(volume)||0)).total;
+  const base=money2(Math.max(0, Number(volume)||0)*feeMaxRate());
+  return money2(base+money2(base*IVA_RATE));
 }
 function formatChipMoney(n){
   return Number(n||0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -4401,35 +4554,34 @@ function membershipRechargeSuggestions(level){
   });
   return plans;
 }
-/** Montos de operación del simulador según topes de perfil (½ y completo). */
-function membershipSimSuggestions(level){
-  const lvl=level||currentKycLevel();
-  const focus=membershipFocusLevel(lvl);
+/** Tickets de ejemplo del simulador: uno típico por rango tarifario y los bordes de cada rango. */
+function membershipSimSuggestions(){
   const items=[];
-  const push=(profileLvl, volume, shortHint, longHint)=>{
-    items.push({
-      amount:volume,
-      profileLvl,
-      primary:profileLvl===focus,
-      mine:profileLvl===focus,
-      label:money(volume)+" MXN",
-      hint:shortHint,
-      detail:longHint || `Tope N${profileLvl}`,
-    });
+  const push=(amount, primary, hint)=>{
+    const rate=feeTier(amount).rate;
+    items.push({amount, primary, mine:false, label:money(amount)+" MXN",
+      hint:primary?`Tasa ${fmtRate(rate)}`:hint, detail:`${hint} · tasa ${fmtRate(rate)}`});
   };
-  push(2, KYC_MONTHLY_MXN[2]/2, "Medio mes", "Nivel 2 · mitad del tope");
-  push(2, KYC_MONTHLY_MXN[2], "Mes completo", "Nivel 2 · tope mensual");
-  push(3, KYC_MONTHLY_MXN[3]/2, "Medio mes", "Nivel 3 · mitad del tope");
-  push(3, KYC_MONTHLY_MXN[3], "Mes completo", "Nivel 3 · tope mensual");
-  push(4, KYC_L4_REF_VOLUME/2, "Medio mes", "Nivel 4 · referencia media");
-  push(4, KYC_L4_REF_VOLUME, "Mes completo", "Nivel 4 · referencia");
-  items.sort((a,b)=>{
-    const as=a.profileLvl===focus?0:1;
-    const bs=b.profileLvl===focus?0:1;
-    if(as!==bs) return as-bs;
-    return a.amount-b.amount;
-  });
+  push(500, true, "Ticket de calle");
+  push(2500, true, "Ticket de comercio medio");
+  push(15000, true, "Ticket corporativo");
+  push(100, false, "Ticket mínimo del rango 1");
+  push(999.99, false, "Tope del rango 1");
+  push(1000, false, "Inicio del rango 2");
+  push(9999.99, false, "Tope del rango 2");
+  push(10000, false, "Inicio del rango 3");
+  push(50000, false, "Integración API");
   return items;
+}
+function renderFeeTierList(activeAmount){
+  const box=$("#mTierList"); if(!box) return;
+  const active=activeAmount>0 ? feeTier(activeAmount) : null;
+  box.innerHTML=FEE_TIERS.map(t=>`
+    <div class="tier-row${active&&t.min===active.min?" is-active":""}">
+      <span class="tier-range">${tierRangeLabel(t)}</span>
+      <span class="tier-rate">${fmtRate(t.rate)}</span>
+      <span class="tier-seg">${t.segment||""}</span>
+    </div>`).join("");
 }
 function renderMoneyChipButtons(box, suggestions, opts={}){
   if(!box) return;
@@ -4460,7 +4612,7 @@ function refreshMembershipProfileChips(){
   const fullFee=membershipFeeForVolume(focusVol);
 
   const recharge=membershipRechargeSuggestions(lvl);
-  const sims=membershipSimSuggestions(lvl);
+  const sims=membershipSimSuggestions();
   renderMoneyChipButtons($("#mAmountPrimary"), recharge.filter(s=>s.primary));
   renderMoneyChipButtons($("#mAmountChips"), recharge.filter(s=>!s.primary), {detail:true});
   renderMoneyChipButtons($("#mSimPrimary"), sims.filter(s=>s.primary));
@@ -4474,20 +4626,18 @@ function refreshMembershipProfileChips(){
         ? `Tu perfil es <b>Nivel 4</b> (sin tope). Elige medio mes o mes con un volumen de referencia de ${money(focusVol)} MXN.`
         : `Tu perfil es <b>Nivel ${lvl}</b>. Elige <b>medio mes</b> (${moneyMXN(halfFee)}) o <b>mes completo</b> (${moneyMXN(fullFee)}).`;
   }
-  const noteSim=$("#mSimChipsNote");
-  if(noteSim){
-    noteSim.textContent = `Simula con la mitad o el tope de abonos de tu Nivel ${focus}.`;
-  }
   const tip=$("#mProfileTip");
   if(tip){
-    tip.innerHTML = `Con <b>${moneyMXN(fullFee)}</b> de membresía cubres hasta <b>${money(focusVol)} MXN</b> en abonos del mes.`;
+    tip.innerHTML = `Con <b>${moneyMXN(fullFee)}</b> de membresía cubres al menos <b>${money(focusVol)} MXN</b> en abonos del mes (calculado con la tasa más alta, ${fmtRate(feeMaxRate())}).`;
   }
   const cap=$("#mCapacity");
   if(cap){
     const bal=Math.max(0, Number(state.membership&&state.membership.balance)||0);
-    const capacity=bal>0 ? bal/FEE_RATE_WITH_IVA : 0;
+    const k=1+IVA_RATE;
+    const capMin=bal>0 ? bal/(feeMaxRate()*k) : 0;
+    const capMax=bal>0 ? bal/(feeMinRate()*k) : 0;
     cap.innerHTML = bal>0
-      ? `Con este saldo alcanzas cerca de <b>${money(capacity)} MXN</b> en abonos (tarifa 0.05% + I.V.A.).`
+      ? `Con este saldo alcanzas entre <b>${money(capMin)}</b> (tickets chicos, ${fmtRate(feeMaxRate())}) y <b>${money(capMax)} MXN</b> (tickets desde $10,000, ${fmtRate(feeMinRate())}) en abonos.`
       : `Cuando recargues, este saldo pagará la tarifa de tus cobros y pagos recibidos.`;
   }
 }
@@ -4529,7 +4679,7 @@ async function renderMembership(){
   if(block) block.classList.toggle("show", st==="blocked");
   const sim=$("#mSim");
   if(sim && !String(sim.value||"").trim()){
-    sim.value=formatChipMoney(membershipFocusVolume());
+    sim.value=formatChipMoney(500);
   }
   simFee();
   refreshChips();
@@ -4552,27 +4702,10 @@ function simFee(){
   const det=$("#mSimDetail");
   if(det){
     det.textContent = v>0
-      ? `${moneyMXN(v)} en abonos → ${moneyMXN(f.base)} + I.V.A. ${moneyMXN(f.iva)}`
-      : `Tarifa 0.05% + I.V.A. 16%`;
+      ? `${moneyMXN(v)} por operación · tasa ${fmtRate(f.rate)} (${tierRangeLabel(feeTier(v))}) → ${moneyMXN(f.base)} + I.V.A. ${moneyMXN(f.iva)}`
+      : `Tarifa escalonada + I.V.A. 16%`;
   }
-}
-
-/* ================= Audit ================= */
-async function renderAudit(){
-  await loadAudit();
-  $("#auditTable").innerHTML=DB.audit.length? [...DB.audit].reverse().map(l=>`
-    <tr><td class="mono">${l.ts.toLocaleString("es-MX")}</td><td>${l.operator}</td><td>${l.action}</td>
-    <td><span class="badge b-reg">${l.category}</span></td><td>${l.severity}</td>
-    <td class="mono" title="${l.hash}">${(l.hash||"").slice(0,16)}…</td></tr>`).join("")
-    : `<tr><td colspan="6" style="color:var(--muted)">Sin eventos aún.</td></tr>`;
-}
-async function verifyChain(){
-  const el=$("#chainStatus");
-  try{
-    const r=await api("/compliance/audit-logs/verify");
-    el.innerHTML=r.chain_valid?`<span style="color:var(--ok)">✓ Cadena íntegra · ${r.total} eventos verificados en la DB</span>`
-      :`<span style="color:var(--danger)">✗ Ruptura detectada (id: ${r.first_broken_id})</span>`;
-  }catch(e){ el.innerHTML=`<span style="color:var(--danger)">No se pudo verificar: ${e.message}</span>`; }
+  renderFeeTierList(v);
 }
 
 /* ================= Sesión (token en el navegador; datos en la DB) ================= */
@@ -4592,7 +4725,7 @@ function authTab(t){
   $("#tabLogin").className="sm"+(login?"":" ghost");
   $("#tabReg").className="sm"+(login?" ghost":"");
   if(login){ renderLoginForm(); }
-  else{ renderRegType(); renderAliasMode(); }
+  else{ renderRegType(); onRegPhoneInput(); }
 }
 function renderRegType(){
   $("#rgType").innerHTML=[["individual","🧑 Persona física"],["company","🏢 Empresa (moral)"]]
@@ -4605,124 +4738,36 @@ function renderRegType(){
 }
 function setRgType(t){ rgType=t; renderRegType(); }
 
-let rgAliasMode="custom"; // phone | mail | custom
-const RG_ALIAS_MODES=[
-  ["phone","📱 Celular","Usa tu número de 10 dígitos"],
-  ["mail","✉ Correo","Usa la parte antes de @"],
-  ["custom","✦ Personalizado","Elige el nombre que quieras"],
-];
-function renderAliasMode(){
-  const box=$("#rgAliasMode"); if(!box) return;
-  box.innerHTML=RG_ALIAS_MODES.map(([v,l])=>
-    `<button type="button" class="sm ${rgAliasMode===v?'':'ghost'}" onclick="setAliasMode('${v}')">${l}</button>`
-  ).join("");
-  const hint=$("#rgAliasHint");
-  const inp=$("#rgAliasRest");
-  if(rgAliasMode==="phone"){
-    if(hint) hint.innerHTML=`Se tomará tu celular como alias (p. ej. <span class="mono">$@5512345678</span>). Debe ser <b>único</b>; si ya existe se te sugerirá uno con <b>3 letras</b> adicionales.`;
-    if(inp){ inp.placeholder="5512345678"; inp.readOnly=false; }
-  }else if(rgAliasMode==="mail"){
-    if(hint) hint.innerHTML=`Se tomará el alias de tu correo (p. ej. <span class="mono">$@juan.perez</span>). Debe ser <b>único</b>; si ya existe se te sugerirá uno con <b>3 dígitos</b> adicionales.`;
-    if(inp){ inp.placeholder="juan.perez"; inp.readOnly=false; }
-  }else{
-    if(hint) hint.innerHTML=`Escribe un alias <b>personalizado</b> (letras, números, <span class="mono">.</span> <span class="mono">_</span> <span class="mono">-</span>). Siempre inicia con <b style="color:var(--brand)">$@</b> y debe ser <b>único</b>; si ya existe se te sugerirá uno con <b>3 dígitos</b> adicionales.`;
-    if(inp){ inp.placeholder="mi-negocio"; inp.readOnly=false; }
-  }
+function regPhoneValue(){
+  const inp=$("#rgPhone"); if(!inp) return "";
+  const digits=(inp.value||"").replace(/\D/g,"").slice(0,10);
+  if(inp.value!==digits) inp.value=digits;
+  return digits;
 }
-function setAliasMode(mode){
-  rgAliasMode=mode;
+function onRegPhoneInput(){
+  const p=regPhoneValue();
   clearAliasTakenHint();
-  renderAliasMode();
-  if(mode==="phone") fillAliasFromPhone(true);
-  else if(mode==="mail") fillAliasFromMail(true);
-  else{
-    const inp=$("#rgAliasRest");
-    if(inp){ inp.value=""; try{ inp.focus(); }catch(e){} }
-  }
-}
-function fillAliasFromPhone(silent){
-  const p=($("#rgPhone").value||"").replace(/\D/g,"");
-  if(p.length<10){
-    if(!silent) toast("Ingresa un celular de 10 dígitos","err");
-    return false;
-  }
-  $("#rgAliasRest").value=p;
-  clearAliasTakenHint();
-  return true;
-}
-function fillAliasFromMail(silent){
-  const local=(($("#rgEmail").value||"").trim().split("@")[0]||"").replace(/[^A-Za-z0-9._-]/g,"");
-  if(!local){
-    if(!silent) toast("Ingresa un correo válido","err");
-    return false;
-  }
-  $("#rgAliasRest").value=local;
-  clearAliasTakenHint();
-  return true;
-}
-function onAliasRestInput(){
-  // Si edita a mano el campo, pasa a modo personalizado
-  if(rgAliasMode!=="custom"){
-    const rest=($("#rgAliasRest").value||"").trim();
-    const phone=($("#rgPhone").value||"").replace(/\D/g,"");
-    const mailLocal=(($("#rgEmail").value||"").trim().split("@")[0]||"").replace(/[^A-Za-z0-9._-]/g,"");
-    const matchesPhone=phone && rest===phone;
-    const matchesMail=mailLocal && rest===mailLocal;
-    if(!matchesPhone && !matchesMail){
-      rgAliasMode="custom";
-      renderAliasMode();
-    }
-  }
-  clearAliasTakenHint();
+  const hint=$("#rgAliasHint"); if(!hint) return;
+  hint.innerHTML = p.length===10
+    ? `Tu alias será <b class="mono" style="color:var(--brand)">$@${p}</b>. Es <b>único</b> y con él entras al sistema.`
+    : `Tu alias será <b style="color:var(--brand)">$@</b> + tu celular de 10 dígitos. Es <b>único</b>: un celular sólo puede tener un usuario y con él entras al sistema.`;
 }
 function clearAliasTakenHint(){
   const box=$("#rgAliasTaken"); if(!box) return;
   box.classList.add("hide"); box.innerHTML="";
 }
-function clearContactTakenHint(){
-  const box=$("#rgContactTaken"); if(!box) return;
-  box.classList.add("hide"); box.innerHTML="";
-}
-function showContactTaken(detail){
-  const box=$("#rgContactTaken"); if(!box) return;
-  const code=detail&&detail.code;
-  const msg=(detail&&detail.message)||"El dato ya está registrado y no se puede repetir";
-  let tip="";
-  if(code==="EMAIL_EXISTS"){
-    tip=" Usa otro correo o inicia sesión con el usuario que ya lo tiene.";
-    try{ $("#rgEmail").focus(); }catch(e){}
-  }else if(code==="PHONE_EXISTS"){
-    tip=" Usa otro celular o inicia sesión con el usuario que ya lo tiene.";
-    try{ $("#rgPhone").focus(); }catch(e){}
-  }
-  box.classList.remove("hide");
-  box.innerHTML=`<b>${msg}.</b>${tip}`;
-  toast(msg,"err");
-}
-function applySuggestedAlias(fullAlias){
-  const a=String(fullAlias||"");
-  const rest=a.startsWith("$@")?a.slice(2):a;
-  if(!rest) return;
-  rgAliasMode="custom";
-  renderAliasMode();
-  $("#rgAliasRest").value=rest;
-  clearAliasTakenHint();
-  toast("Alias sugerido aplicado: "+a,"ok");
-  try{ $("#rgAliasRest").focus(); }catch(e){}
-}
 function showAliasTaken(detail){
   const box=$("#rgAliasTaken"); if(!box) return;
-  const taken=(detail&&detail.alias)||("$@"+(($("#rgAliasRest").value||"").trim()));
-  const suggested=(detail&&detail.suggested_alias)||"";
-  const msg=(detail&&detail.message)||"El alias ya existe y no se puede usar";
-  const safeSug=suggested.replace(/'/g,"\\'");
+  const taken=(detail&&detail.alias)||("$@"+regPhoneValue());
+  const msg=(detail&&detail.message)||"Ese celular ya está registrado como alias de otro usuario";
+  const rest=taken.startsWith("$@")?taken.slice(2):taken;
   box.classList.remove("hide");
-  box.innerHTML=`<b>${msg}.</b> El alias <span class="mono">${taken}</span> ya está registrado.
-    ${suggested?`<div style="margin-top:8px">Prueba con: <b class="mono">${suggested}</b>
-      <div class="reader-btns" style="margin-top:8px">
-        <button type="button" class="sm" onclick="applySuggestedAlias('${safeSug}')">Usar alias sugerido</button>
-      </div></div>`:""}`;
+  box.innerHTML=`<b>${msg}.</b> El alias <span class="mono">${taken}</span> ya existe.
+    <div class="reader-btns" style="margin-top:8px">
+      <button type="button" class="sm" onclick="authTab('login');$('#lgAliasRest').value='${rest}';lookupLoginAlias();">Entrar con ese celular</button>
+    </div>`;
   toast(msg,"err");
+  try{ $("#rgPhone").focus(); }catch(e){}
 }
 let _lgLookupTimer=null;
 let _lgLastLookup="";
@@ -4791,46 +4836,24 @@ async function lookupLoginAlias(fromDebounce){
 }
 async function doRegister(){
   clearAliasTakenHint();
-  clearContactTakenHint();
+  const phone=regPhoneValue();
   const email=($("#rgEmail").value||"").trim().toLowerCase();
-  const phone=($("#rgPhone").value||"").replace(/\D/g,"");
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    toast("Ingresa un correo válido","err"); try{ $("#rgEmail").focus(); }catch(e){} return;
-  }
   if(!/^\d{10}$/.test(phone)){
     toast("Ingresa un celular de 10 dígitos","err"); try{ $("#rgPhone").focus(); }catch(e){} return;
   }
-  // Sincroniza alias según el modo elegido antes de validar
-  if(rgAliasMode==="phone"){
-    if(!fillAliasFromPhone(false)) return;
-  }else if(rgAliasMode==="mail"){
-    if(!fillAliasFromMail(false)) return;
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    toast("El correo no es válido (puedes dejarlo vacío)","err"); try{ $("#rgEmail").focus(); }catch(e){} return;
   }
-  let rest=($("#rgAliasRest").value||"").trim();
-  // Normaliza personalizado: sin espacios ni caracteres inválidos
-  if(rgAliasMode==="custom"){
-    rest=rest.replace(/\s+/g,"").replace(/[^A-Za-z0-9._-]/g,"");
-    $("#rgAliasRest").value=rest;
-  }
-  if(!/^[A-Za-z0-9._-]{3,}$/.test(rest)){
-    toast(rgAliasMode==="custom"
-      ? "El alias personalizado debe tener ≥3 caracteres (letras, números, . _ -)"
-      : "El alias debe tener ≥3 caracteres (letras, números, . _ -)","err");
-    return;
-  }
-  if(rest.length>57){ toast("El alias es demasiado largo (máx. 57 caracteres después de $@)","err"); return; }
-  const alias="$@"+rest;
-  const body={alias, client_type:rgType, email, phone_number:phone};
+  const alias="$@"+phone;
+  const body={client_type:rgType, phone_number:phone};
+  if(email) body.email=email;
   try{ await api("/auth/register",{method:"POST",auth:false,body}); }
   catch(e){
     const d=e&&e.data&&e.data.detail;
-    if(e.status===409 && d && typeof d==="object"){
-      if(d.code==="EMAIL_EXISTS" || d.code==="PHONE_EXISTS"){ showContactTaken(d); return; }
-      if(d.code==="ALIAS_EXISTS" || d.suggested_alias){ showAliasTaken(d); return; }
+    if(e.status===409 && d && typeof d==="object" && (d.code==="ALIAS_EXISTS" || d.code==="PHONE_EXISTS")){
+      showAliasTaken(d); return;
     }
-    if(e.status===409 && /alias|ya existe|ya est[aá] registrado/i.test(e.message||"")){
-      showAliasTaken({message:e.message,alias}); return;
-    }
+    if(e.status===409){ showAliasTaken({message:e.message,alias}); return; }
     toast(e.message||"No se pudo crear el usuario","err");
     return;
   }
@@ -4853,7 +4876,7 @@ function logout(){
   NOTIF_STATE.items=[]; NOTIF_STATE.unread=0; NOTIF_STATE.filter="";
   updateNotifBadge();
   const list=$("#notifList"); if(list) list.innerHTML=`<div class="notif-empty">Inicia sesión para ver tus alertas.</div>`;
-  DB={users:{},charges:[],transactions:[],audit:[],session:null};
+  DB={users:{},charges:[],transactions:[],session:null};
   state.user=null; state.membership=null; state.vault=null;
   closeNav();
   $("#authOverlay").classList.remove("hide");
@@ -4868,6 +4891,8 @@ function enterApp(){
   startNotifPolling();
 }
 
+bindCurrencyInput($("#bAmount"), "bAmountRead", "Vas a cobrar");
+bindCurrencyInput($("#sendAmount"), "sendAmountRead", "Vas a enviar");
 async function boot(){
   try{ TOKEN=localStorage.getItem(LS_TOKEN); }catch(e){ TOKEN=null; }
   if(TOKEN){

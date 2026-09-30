@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Súper CLABE — Super administración</title>
+<link rel="icon" type="image/jpeg" href="assets/logo-super-clabe.jpg">
+<style>
+  :root{
+    --bg:#f4faf9; --panel:#fff; --line:#c9e0e1; --txt:#0E3B43; --muted:#5a7d82;
+    --brand:#2A8D92; --deep:#0E3B43; --ok:#0f9f8a; --warn:#d97706; --danger:#dc2626;
+    --side-w:248px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  button{font:inherit;cursor:pointer;border:none;border-radius:10px;padding:9px 14px;background:var(--brand);color:#fff;font-weight:600}
+  button.ghost{background:#fff;color:var(--txt);border:1px solid var(--line)}
+  button.danger{background:var(--danger)}
+  button.sm{padding:6px 10px;font-size:12.5px}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  input,select,textarea{font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--txt);width:100%}
+  label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 4px}
+  .hide{display:none!important}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+  .muted{color:var(--muted)}
+  /* Login */
+  .login{min-height:100vh;display:grid;place-items:center;padding:24px;
+    background:linear-gradient(135deg,#0E3B43,#2A8D92)}
+  .login-card{width:min(400px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .login-card img{height:52px;margin-bottom:8px}
+  .login-card h1{font-size:19px;margin:6px 0 2px}
+  /* Layout: menú fijo que se oculta para dejar el área de trabajo a todo el ancho */
+  .shell{min-height:100vh}
+  aside{
+    position:fixed;top:0;left:0;z-index:40;width:var(--side-w);height:100vh;height:100dvh;overflow:auto;
+    background:var(--deep);color:#fff;padding:18px 14px;display:flex;flex-direction:column;gap:6px;
+    transform:translateX(-100%);transition:transform .26s ease;box-shadow:8px 0 28px rgba(14,59,67,.18);
+  }
+  body.nav-open aside{transform:none}
+  aside .brand-logo{width:100%;height:auto;display:block;border-radius:12px;margin:0 0 8px;background:#fff}
+  aside .side-close{
+    align-self:flex-end;width:34px;height:34px;padding:0;border-radius:10px;
+    background:rgba(255,255,255,.12);color:#fff;font-size:16px;
+  }
+  .nav-backdrop{position:fixed;inset:0;background:rgba(14,59,67,.4);z-index:30;opacity:0;pointer-events:none;transition:opacity .26s}
+  body.nav-open .nav-backdrop{opacity:1;pointer-events:auto}
+  .ws-bar{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+  .menu-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 12px;
+    background:#fff;color:var(--txt);border:1px solid var(--line);border-radius:12px;font-weight:700;
+  }
+  .menu-btn .ml{font-size:13px}
+  main{padding:22px 26px;min-width:0;transition:margin-left .26s ease}
+  @media(min-width:861px){
+    body.nav-open main{margin-left:var(--side-w)}
+    .nav-backdrop{display:none}
+  }
+  aside .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9fd8d2;margin-bottom:14px}
+  aside a{color:#dbeeed;padding:9px 12px;border-radius:10px;cursor:pointer;font-weight:600}
+  aside a.active,aside a:hover{background:rgba(255,255,255,.12);color:#fff}
+  aside .foot{margin-top:auto;font-size:12px;color:#9fd8d2}
+  h2{margin:0 0 4px;font-size:21px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px}
+  #ovCards{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+  #ovCards .card{padding:12px 10px;min-width:0}
+  #ovCards .card .k{font-size:10.5px;letter-spacing:.03em;line-height:1.25}
+  #ovCards .card .v{font-size:clamp(14px,1.35vw,20px);overflow-wrap:anywhere}
+  #ovCards .card .d{font-size:11px;line-height:1.3}
+  .charts{display:grid;grid-template-columns:1fr;gap:14px;margin:0 0 16px}
+  @media(min-width:980px){
+    .charts{grid-template-columns:1fr 1fr}
+  }
+  .chart-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px 10px}
+  .chart-card h3{margin:0;font-size:15px}
+  .chart-card .hint{margin:2px 0 8px;font-size:12px;color:var(--muted)}
+  .chart-card svg{width:100%;height:auto;display:block}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  .chart-card svg .hit{cursor:pointer}
+  .chart-tip{
+    position:fixed;z-index:45;pointer-events:none;display:none;
+    background:var(--deep);color:#fff;padding:6px 9px;border-radius:8px;
+    font-size:12px;font-weight:700;line-height:1.35;max-width:240px;
+    box-shadow:0 8px 20px rgba(14,59,67,.25)
+  }
+  .chart-tip.show{display:block}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .card .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  .card .v{font-size:22px;font-weight:800;margin-top:4px}
+  .card .d{font-size:12px;color:var(--muted);margin-top:2px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .toolbar input,.toolbar select{width:auto;min-width:180px}
+  .toolbar input[type=date]{min-width:150px}
+  .toolbar label{margin:0;align-self:center}
+  .tbl{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:auto}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid #e6f0f0;white-space:nowrap}
+  td.who,td.folio{white-space:normal}
+  td.who small,td.folio small{display:block;color:var(--muted);font-size:11.5px;font-weight:500;margin-top:2px}
+  td.amt{font-weight:800}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#f7fbfb}
+  tr.click{cursor:pointer} tr.click:hover{background:#f2f9f8}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700}
+  .b-ok{background:#dcf5ef;color:#0b7a69} .b-off{background:#fde2e2;color:#b91c1c} .b-warn{background:#fdf0d8;color:#a35b04}
+  .b-info{background:#e3f1f2;color:var(--deep)}
+  .pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13.5px}
+  .kv span{color:var(--muted)}
+  .tabs{display:flex;gap:6px;margin:16px 0 10px}
+  .tabs button{background:#fff;color:var(--txt);border:1px solid var(--line)}
+  .tabs button.on{background:var(--deep);color:#fff;border-color:var(--deep)}
+  .note{background:#eef7f6;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--muted)}
+  .toast{position:fixed;right:18px;bottom:18px;background:var(--deep);color:#fff;padding:11px 16px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;max-width:420px}
+  .toast.show{opacity:1} .toast.err{background:var(--danger)}
+  .modal{position:fixed;inset:0;background:rgba(14,59,67,.45);display:none;place-items:center;padding:20px;z-index:50}
+  .modal.show{display:grid}
+  .modal .box{background:#fff;border-radius:16px;padding:20px;width:min(440px,100%)}
+  .modal .box h3{margin:0 0 6px}
+  .modal .box.exp-box{width:min(920px,100%);max-height:min(90vh,920px);overflow:auto}
+  .exp-hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+  .exp-sec{margin-top:16px}
+  .exp-sec h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .exp-files{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  .exp-file{border:1px solid var(--line);border-radius:12px;padding:10px;background:#f7fbfb}
+  .exp-file img{width:100%;height:160px;object-fit:contain;background:#fff;border-radius:8px;cursor:pointer}
+  .exp-file .nm{font-size:12px;margin-top:6px;word-break:break-word;line-height:1.4}
+  .exp-file .open{margin-top:8px}
+  .exp-form{display:grid;grid-template-columns:170px 1fr;gap:8px 12px;align-items:center}
+  .exp-form label{margin:0}
+  .exp-zoom{position:fixed;inset:0;background:rgba(14,59,67,.78);display:none;place-items:center;z-index:80;padding:24px}
+  .exp-zoom.show{display:grid}
+  .exp-zoom img{max-width:min(960px,100%);max-height:88vh;background:#fff;border-radius:8px}
+  .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+  .shell,main,section{max-width:100%}
+  .tbl{-webkit-overflow-scrolling:touch}
+  @media(max-width:1100px){
+    #ovCards{display:flex;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+    #ovCards .card{flex:0 0 168px;scroll-snap-align:start}
+    #ovCards .card .v{font-size:18px}
+  }
+  @media(max-width:860px){
+    aside{width:min(86vw,300px)}
+    body.nav-open{overflow:hidden}
+    .menu-btn .ml{display:none}
+    .menu-btn{width:42px;padding:0}
+    main{padding:14px 12px 28px;overflow-x:clip}
+    .ws-bar{position:sticky;top:0;z-index:20;background:var(--bg);margin:0 -12px 12px;padding:10px 12px}
+    h2{font-size:18px}
+    .sub{margin-bottom:12px}
+    .grid2{grid-template-columns:1fr}
+    .toolbar{display:grid;grid-template-columns:1fr 1fr;align-items:end;gap:8px 10px}
+    .toolbar input,.toolbar select,.toolbar button{width:100%;min-width:0}
+    .toolbar button{grid-column:1 / -1}
+    .toolbar input[type=date]{min-width:0}
+    .toolbar label{margin:0}
+    .tabs{flex-wrap:wrap}
+    .kv{grid-template-columns:1fr;gap:2px}
+    .kv span{margin-top:8px}
+    .pager{flex-wrap:wrap;justify-content:space-between}
+    .chart-card{padding:12px 10px 8px}
+    .toast{left:12px;right:12px;bottom:12px;max-width:none}
+    input,select,textarea{font-size:16px}
+  }
+  @media(max-width:640px){
+    .toolbar{grid-template-columns:1fr}
+    .modal{padding:0;align-items:end}
+    .modal .box,.modal .box.exp-box{
+      width:100%;max-height:min(92dvh,100%);border-radius:16px 16px 0 0;padding:16px 14px 20px
+    }
+    .exp-form{grid-template-columns:1fr;gap:4px}
+    .exp-form label{margin-top:8px}
+    .exp-files{grid-template-columns:1fr 1fr}
+    .exp-hd{align-items:center}
+    .actions button{flex:1 1 140px}
+    .login{padding:12px}
+    .login-card{padding:20px 16px}
+    .login-card img{height:auto;width:min(200px,70%)}
+  }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login" id="loginView">
+  <form class="login-card" onsubmit="event.preventDefault();doLogin()">
+    <img src="assets/logo-super-clabe.jpg" alt="Súper CLABE">
+    <h1>Super administración</h1>
+    <p class="muted" style="margin:0 0 8px">Acceso exclusivo para el administrador del sistema.</p>
+    <label>Alias de administrador</label>
+    <input id="lgAlias" value="$@superadmin" autocomplete="username" spellcheck="false">
+    <label>Contraseña</label>
+    <input id="lgPass" type="password" autocomplete="current-password">
+    <label>Código 2FA (6 dígitos)</label>
+    <input id="lgTotp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456">
+    <button style="width:100%;margin-top:16px" type="submit">Entrar</button>
+    <p class="muted" style="font-size:12px;margin:12px 0 0">Los usuarios del sistema entran en <a href="/app.html">/app.html</a>.</p>
+  </form>
+</div>
+
+<!-- Panel -->
+<div class="shell hide" id="appView">
+  <div class="nav-backdrop" onclick="closeNav()"></div>
+  <aside>
+    <button class="side-close" type="button" onclick="dismissNav()" aria-label="Ocultar menú">✕</button>
+    <img class="brand-logo" src="assets/logo-super-clabe.jpg" alt="Súper CLABE">
+    <div class="tag">Super administración</div>
+    <a data-v="overview" class="active">Dashboard</a>
+    <a data-v="users">Usuarios</a>
+    <a data-v="transactions">Movimientos</a>
+    <a data-v="audit">Bitácora del sistema</a>
+    <a data-v="account">Mi cuenta</a>
+    <div class="foot">
+      <div id="adminName" style="margin-bottom:8px"></div>
+      <button class="ghost sm" type="button" onclick="dismissNav()" style="width:100%;margin-bottom:8px">Ocultar menú</button>
+      <button class="ghost sm" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+  <main>
+    <div class="ws-bar">
+      <button class="menu-btn" id="menuBtn" type="button" onclick="toggleNav()" aria-label="Mostrar u ocultar menú" aria-expanded="true" title="Mostrar u ocultar menú"><span aria-hidden="true">☰</span><span class="ml">Menú</span></button>
+    </div>
+    <section id="v-overview">
+      <h2>Dashboard</h2>
+      <p class="sub" id="ovSub">Estado general de usuarios, membresías y operación.</p>
+      <div class="toolbar">
+        <label for="ovFrom">Desde</label>
+        <input id="ovFrom" type="date" onchange="loadOverview()">
+        <label for="ovTo">Hasta</label>
+        <input id="ovTo" type="date" onchange="loadOverview()">
+        <button type="button" class="ghost" onclick="setOverviewMonth()">Este mes</button>
+      </div>
+      <div class="cards" id="ovCards"></div>
+      <div class="charts" id="ovCharts"></div>
+      <div class="note">Como super administrador puedes gestionar usuarios, membresías y auditar el sistema. No puedes generar cobros, pagar ni operar a nombre de ningún usuario. La CLABE permanece enmascarada. El expediente de registro y validación se abre desde el perfil de cada usuario.</div>
+    </section>
+
+    <section id="v-users" class="hide">
+      <h2>Usuarios</h2>
+      <p class="sub">Busca por celular, nombre o correo. Haz clic en un usuario para ver su perfil de soporte.</p>
+      <div class="toolbar">
+        <input id="uQ" placeholder="Buscar…" oninput="debounce(loadUsers)">
+        <select id="uStatus" onchange="usersPage=0;loadUsers()">
+          <option value="all">Todos</option><option value="active">Activos</option><option value="inactive">Desactivados</option>
+        </select>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Alias</th><th>Nombre</th><th>Tipo</th><th>Correo</th><th>Nivel</th><th>Membresía</th><th>Tarifa por pagos</th><th>Estado</th><th>Alta</th></tr></thead>
+        <tbody id="uRows"></tbody>
+      </table><div class="pager" id="uPager"></div></div>
+    </section>
+
+    <section id="v-user" class="hide">
+      <button class="ghost sm" onclick="show('users')">← Volver a usuarios</button>
+      <div id="udBody" style="margin-top:14px"></div>
+    </section>
+
+    <section id="v-transactions" class="hide">
+      <h2>Movimientos del sistema</h2>
+      <p class="sub" id="tSub">Liquidaciones por fecha, tipo y usuario. La tarifa y su porcentaje corresponden a quien recibe.</p>
+      <div class="toolbar">
+        <input id="tQ" placeholder="Folio o clave de rastreo" oninput="debounce(loadTx)">
+        <input id="tUser" placeholder="Usuario (alias o nombre)" oninput="debounce(loadTx)">
+        <select id="tKind" onchange="txPage=0;loadTx()">
+          <option value="">Todo tipo</option>
+          <option value="direct">Envío directo</option>
+          <option value="qr">Cobro QR</option>
+        </select>
+        <select id="tPeriod" onchange="onTxPeriod()">
+          <option value="today">Hoy</option>
+          <option value="week">Esta semana</option>
+          <option value="month" selected>Este mes</option>
+          <option value="prev">Mes anterior</option>
+          <option value="quarter">Últimos 3 meses</option>
+          <option value="year">Este año</option>
+          <option value="all">Todo</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <label for="tFrom">Desde</label>
+        <input id="tFrom" type="date" onchange="txDatesChanged()">
+        <label for="tTo">Hasta</label>
+        <input id="tTo" type="date" onchange="txDatesChanged()">
+        <button type="button" class="ghost" onclick="resetTxFilters()">Limpiar</button>
+      </div>
+      <div class="cards" id="tSum"></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Fecha</th><th>Folio</th><th>Pagó</th><th>Recibió</th><th>Tipo</th><th>Monto</th><th>Tarifa</th><th>% tarifa</th><th>Estado</th><th>Rastreo</th></tr></thead>
+        <tbody id="tRows"></tbody>
+      </table><div class="pager" id="tPager"></div></div>
+    </section>
+
+    <section id="v-audit" class="hide">
+      <h2>Bitácora del sistema</h2>
+      <p class="sub">Registro inmutable con hash SHA-256 encadenado (Regla 58a).</p>
+      <div class="toolbar">
+        <input id="aQ" placeholder="Operador o acción…" oninput="debounce(loadAudit)">
+        <select id="aCat" onchange="auditPage=0;loadAudit()"><option value="">Todas las categorías</option></select>
+        <select id="aSev" onchange="auditPage=0;loadAudit()">
+          <option value="">Toda severidad</option><option>INFO</option><option>WARNING</option><option>CRITICAL</option>
+        </select>
+        <button class="ghost" onclick="verifyChain()">Verificar integridad</button>
+        <span id="chainStatus"></span>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Fecha</th><th>Operador</th><th>Acción</th><th>Categoría</th><th>Sev.</th><th>IP</th><th>Detalle</th><th>Hash</th></tr></thead>
+        <tbody id="aRows"></tbody>
+      </table><div class="pager" id="aPager"></div></div>
+    </section>
+
+    <section id="v-account" class="hide">
+      <h2>Mi cuenta</h2>
+      <p class="sub">Cambia la contraseña del super administrador.</p>
+      <form class="card" style="max-width:420px" onsubmit="event.preventDefault();changePassword()">
+        <label>Contraseña actual</label><input id="pwCur" type="password" autocomplete="current-password">
+        <label>Nueva contraseña (mín. 12 caracteres)</label><input id="pwNew" type="password" autocomplete="new-password">
+        <label>Código 2FA</label><input id="pwTotp" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+        <button style="margin-top:14px" type="submit">Cambiar contraseña</button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<!-- Modal de acción con motivo -->
+<div class="modal" id="actModal">
+  <div class="box">
+    <h3 id="actTitle"></h3>
+    <p class="muted" id="actText" style="margin:0"></p>
+    <div id="actExtra"></div>
+    <label>Motivo (queda en la bitácora)</label>
+    <textarea id="actReason" rows="3" placeholder="Ej. Solicitud del usuario por soporte #123"></textarea>
+    <div class="actions">
+      <button class="ghost" onclick="closeAct()">Cancelar</button>
+      <button id="actOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="chart-tip" id="chartTip"></div>
+
+<div class="modal" id="expModal" onclick="if(event.target===this)closeExpediente()">
+  <div class="box exp-box" role="dialog" aria-modal="true" aria-labelledby="expTitle">
+    <div class="exp-hd">
+      <div>
+        <h3 id="expTitle">Expediente</h3>
+        <p class="muted" id="expSub" style="margin:0"></p>
+      </div>
+      <button class="ghost sm" type="button" onclick="closeExpediente()">Cerrar</button>
+    </div>
+    <div id="expBody"></div>
+  </div>
+</div>
+<div class="exp-zoom" id="expZoom" onclick="closeExpZoom()"><img id="expZoomImg" alt="Adjunto"></div>
+
+<script src="config.js"></script>
+<script>
+const API=(window.SUPERCLABE_CONFIG&&SUPERCLABE_CONFIG.API_BASE)||"/api/v1";
+const SS_KEY="superclabe_admin_token";
+let TOKEN=null, usersPage=0, txPage=0, auditPage=0, currentUser=null;
+const PAGE=50;
+const $=s=>document.querySelector(s);
+function esc(v){ return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+const money=n=>"$"+Number(n||0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+function feePct(rate){
+  if(rate==null||rate==="") return "—";
+  return (Number(rate)*100).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
+}
+function feePcts(rates){
+  if(!rates||!rates.length) return "—";
+  return rates.map(feePct).join(", ");
+}
+const fdate=d=>d?new Date(d).toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short"}):"—";
+function toast(msg,kind){ const t=$("#toast"); t.textContent=msg; t.className="toast show"+(kind==="err"?" err":""); clearTimeout(t._h); t._h=setTimeout(()=>t.className="toast",3500); }
+let _deb=null; function debounce(fn){ clearTimeout(_deb); _deb=setTimeout(()=>{ usersPage=txPage=auditPage=0; fn(); },350); }
+
+async function api(path,{method="GET",body=null}={}){
+  const headers={}; if(body) headers["Content-Type"]="application/json";
+  if(TOKEN) headers.Authorization="Bearer "+TOKEN;
+  const res=await fetch(API+path,{method,headers,body:body?JSON.stringify(body):null});
+  const txt=await res.text(); let data=null; try{ data=txt?JSON.parse(txt):null; }catch(e){ data=txt; }
+  if(!res.ok){
+    let msg=res.statusText;
+    if(data&&data.detail){
+      msg=typeof data.detail==="string"?data.detail
+        :Array.isArray(data.detail)?data.detail.map(d=>d.msg).join("; ")
+        :(data.detail.message||JSON.stringify(data.detail));
+    }
+    if(res.status===401 && TOKEN){ logout(); msg="Sesión expirada. Vuelve a entrar."; }
+    throw {status:res.status,message:msg};
+  }
+  return data;
+}
+
+/* ---------- Sesión ---------- */
+async function doLogin(){
+  const body={alias:$("#lgAlias").value.trim(), password:$("#lgPass").value, totp_code:$("#lgTotp").value.trim()};
+  if(!/^\d{6}$/.test(body.totp_code)){ toast("Escribe el código 2FA de 6 dígitos","err"); return; }
+  try{
+    const r=await api("/admin/login",{method:"POST",body});
+    TOKEN=r.access_token; sessionStorage.setItem(SS_KEY,TOKEN);
+    $("#lgPass").value=""; $("#lgTotp").value="";
+    await enter();
+  }catch(e){ toast(e.message,"err"); }
+}
+async function enter(){
+  const me=await api("/admin/me");
+  $("#adminName").textContent=me.display_name||me.alias;
+  $("#loginView").classList.add("hide"); $("#appView").classList.remove("hide");
+  show("overview");
+}
+function logout(){
+  TOKEN=null; sessionStorage.removeItem(SS_KEY);
+  $("#appView").classList.add("hide"); $("#loginView").classList.remove("hide");
+}
+
+/* ---------- Menú lateral ---------- */
+const NAV_KEY="superclabe_admin_nav_open";
+function isMobileNav(){ return window.matchMedia("(max-width:860px)").matches; }
+function setNav(open, persist){
+  document.body.classList.toggle("nav-open", !!open);
+  const btn=document.getElementById("menuBtn");
+  if(btn){
+    btn.setAttribute("aria-expanded", open?"true":"false");
+    btn.title=open?"Ocultar menú":"Mostrar menú";
+  }
+  if(persist && !isMobileNav()){
+    try{ localStorage.setItem(NAV_KEY, open?"1":"0"); }catch(e){}
+  }
+}
+function closeNav(){ setNav(false, false); }
+function toggleNav(){ setNav(!document.body.classList.contains("nav-open"), true); }
+function dismissNav(){ setNav(false, !isMobileNav()); }
+function initNav(){
+  if(isMobileNav()){ setNav(false, false); return; }
+  let saved="1";
+  try{ saved=localStorage.getItem(NAV_KEY)||"1"; }catch(e){}
+  setNav(saved!=="0", false);
+}
+let navModeMobile=isMobileNav();
+window.addEventListener("resize",()=>{
+  const mobile=isMobileNav();
+  if(mobile===navModeMobile) return;
+  navModeMobile=mobile;
+  if(mobile) setNav(false, false);
+  else initNav();
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape") return;
+  if($("#expZoom") && $("#expZoom").classList.contains("show")){ closeExpZoom(); return; }
+  if($("#expModal") && $("#expModal").classList.contains("show")){ closeExpediente(); return; }
+  const modal=$("#actModal");
+  if(modal && modal.classList.contains("show")){ closeAct(); return; }
+  if(isMobileNav()) closeNav();
+});
+initNav();
+
+/* ---------- Navegación ---------- */
+document.querySelectorAll("aside a[data-v]").forEach(a=>a.onclick=()=>show(a.dataset.v));
+function show(v){
+  document.querySelectorAll("aside a[data-v]").forEach(a=>a.classList.toggle("active",a.dataset.v===v||(v==="user"&&a.dataset.v==="users")));
+  document.querySelectorAll("main section").forEach(s=>s.classList.add("hide"));
+  $("#v-"+v).classList.remove("hide");
+  if(isMobileNav()) closeNav();
+  if(v==="overview") loadOverview();
+  if(v==="users") loadUsers();
+  if(v==="transactions") loadTx();
+  if(v==="audit") loadAudit();
+}
+function pager(box,total,page,setPage){
+  const pages=Math.max(1,Math.ceil(total/PAGE));
+  $(box).innerHTML=`<span class="muted">${total} registros · pág. ${page+1}/${pages}</span>
+    <button class="ghost sm" ${page<=0?"disabled":""} data-p="${page-1}">‹</button>
+    <button class="ghost sm" ${page>=pages-1?"disabled":""} data-p="${page+1}">›</button>`;
+  $(box).querySelectorAll("button").forEach(b=>b.onclick=()=>setPage(Number(b.dataset.p)));
+}
+
+/* ---------- Dashboard ---------- */
+function localISO(d){
+  const z=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());
+}
+function fmtISODate(s){
+  const [y,m,d]=String(s||"").split("-");
+  return d&&m&&y?`${d}/${m}/${y}`:s;
+}
+function ensureOverviewDates(){
+  const from=$("#ovFrom"), to=$("#ovTo");
+  if(from.value && to.value) return;
+  const now=new Date();
+  to.value=localISO(now);
+  from.value=localISO(new Date(now.getFullYear(), now.getMonth(), 1));
+}
+function setOverviewMonth(){
+  const now=new Date();
+  $("#ovTo").value=localISO(now);
+  $("#ovFrom").value=localISO(new Date(now.getFullYear(), now.getMonth(), 1));
+  loadOverview();
+}
+async function loadOverview(){
+  ensureOverviewDates();
+  const from=$("#ovFrom").value, to=$("#ovTo").value;
+  if(from>to){ toast("La fecha inicial no puede ser posterior a la final","err"); return; }
+  try{
+    const o=await api(`/admin/overview?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+    const p=o.period;
+    const card=(k,v,d)=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d||""}</div></div>`;
+    $("#ovSub").textContent=`Del ${fmtISODate(p.from)} al ${fmtISODate(p.to)}. Ingreso por tarifas, volumen de operaciones y bitácora usan ese periodo. Usuarios, saldo y cobros pendientes son el estado actual.`;
+    const pend=o.charges_pending&&typeof o.charges_pending==="object"?o.charges_pending:{count:o.charges_pending||0,amount:0,open:0};
+    const pendDetail=money(pend.amount)+(pend.open?` · ${pend.open} con monto libre`:"");
+    const feeAvg=p.avg_fee_rate==null?"Sin operaciones en el periodo":`Promedio ${feePct(p.avg_fee_rate)}`;
+    $("#ovCards").innerHTML=
+      card("Usuarios",o.users.total,`${o.users.active} activos · ${o.users.inactive} desactivados`)+
+      card("Saldo en membresías",money(o.memberships.total_balance),`${o.memberships.blocked} bloqueadas · ${o.memberships.suspended} suspendidas`)+
+      card("Ingreso por tarifas",money(p.fees),feeAvg)+
+      card("Volumen de operaciones",money(p.volume),`${p.count} operaciones en el periodo`)+
+      card("Cobros pendientes",pend.count,pendDetail)+
+      card("Eventos en bitácora",o.audit_entries,"en el periodo");
+    paintOverviewCharts(o);
+  }catch(e){ toast(e.message,"err"); }
+}
+const MONTHS_ES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+function monthTick(key, i, keys){
+  const [y,m]=String(key).split("-").map(Number);
+  if(!m) return String(key);
+  const name=MONTHS_ES[m-1]||key;
+  const prev=i>0?String(keys[i-1]):"";
+  return !prev || prev.slice(0,4)!==String(y) ? `${name} ${String(y).slice(2)}` : name;
+}
+function niceMax(v){
+  v=Number(v)||0;
+  if(v<=0) return 1;
+  const p=Math.pow(10, Math.floor(Math.log10(v)));
+  const n=v/p;
+  const step=n<=1?1:n<=2?2:n<=5?5:10;
+  return step*p;
+}
+function compactMoney(n){
+  n=Number(n)||0;
+  const abs=Math.abs(n);
+  if(abs>=1000000) return "$"+(n/1000000).toLocaleString("es-MX",{maximumFractionDigits:1})+" M";
+  if(abs>=1000) return "$"+(n/1000).toLocaleString("es-MX",{maximumFractionDigits:1})+" mil";
+  return money(n);
+}
+function chartFrame(labels){
+  const W=720,H=250,L=72,R=16,T=18,B=36;
+  return {W,H,L,R,T,B,iw:W-L-R,ih:H-T-B,labels};
+}
+function lineChart(labels, series){
+  const g=chartFrame(labels);
+  const max=niceMax(Math.max(0, ...series.flatMap(s=>s.values)));
+  const ticks=4;
+  const x=i=>g.L+(labels.length<=1?g.iw/2:(i/(labels.length-1))*g.iw);
+  const y=v=>g.T+g.ih-(Number(v)||0)/max*g.ih;
+  let grid="";
+  for(let t=0;t<=ticks;t++){
+    const val=max*t/ticks;
+    const yy=y(val);
+    grid+=`<line x1="${g.L}" y1="${yy}" x2="${g.W-g.R}" y2="${yy}" stroke="#e6f0f0"/>`;
+    grid+=`<text x="${g.L-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#5a7d82">${esc(series[0].axis(val))}</text>`;
+  }
+  let paths="";
+  series.forEach(s=>{
+    const pts=s.values.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+    paths+=`<polyline fill="none" stroke="${s.color}" stroke-width="2.5" points="${pts}"/>`;
+    s.values.forEach((v,i)=>{
+      const tip=`${labels[i]} · ${s.name}: ${s.tip(v)}`;
+      paths+=`<circle class="hit" cx="${x(i)}" cy="${y(v)}" r="14" fill="transparent" data-tip="${esc(tip)}"/>`;
+      paths+=`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${s.color}" pointer-events="none"/>`;
+    });
+  });
+  const xlab=labels.map((lb,i)=>`<text x="${x(i)}" y="${g.H-12}" text-anchor="middle" font-size="11" fill="#5a7d82">${esc(lb)}</text>`).join("");
+  return `<svg viewBox="0 0 ${g.W} ${g.H}" role="img">${grid}${paths}${xlab}</svg>`;
+}
+function barChart(items){
+  const W=720,H=250,L=16,R=16,T=28,B=48;
+  const max=niceMax(Math.max(0, ...items.map(i=>i.value)));
+  const iw=W-L-R, ih=H-T-B;
+  const gap=iw*0.18;
+  const bw=(iw-gap*(items.length+1))/items.length;
+  let bars="";
+  items.forEach((it,i)=>{
+    const h=max? (Number(it.value)||0)/max*ih : 0;
+    const x=L+gap+(bw+gap)*i;
+    const y=T+ih-h;
+    const tip=`${it.label}: ${it.display}`;
+    bars+=`<rect class="hit" x="${x}" y="${y}" width="${bw}" height="${Math.max(h,1)}" rx="8" fill="${it.color}" data-tip="${esc(tip)}"/>`;
+    bars+=`<text x="${x+bw/2}" y="${Math.max(y-8,14)}" text-anchor="middle" font-size="13" font-weight="700" fill="#0E3B43">${esc(it.display)}</text>`;
+    bars+=`<text x="${x+bw/2}" y="${H-16}" text-anchor="middle" font-size="12" fill="#5a7d82">${esc(it.label)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img"><line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="#e6f0f0"/>${bars}</svg>`;
+}
+function showChartTip(text, e){
+  const tip=$("#chartTip"); if(!tip) return;
+  tip.textContent=text;
+  tip.classList.add("show");
+  moveChartTip(e);
+}
+function moveChartTip(e){
+  const tip=$("#chartTip"); if(!tip||!tip.classList.contains("show")) return;
+  const pad=14, w=tip.offsetWidth, h=tip.offsetHeight;
+  let x=e.clientX+14, y=e.clientY-h-12;
+  if(x+w>window.innerWidth-8) x=Math.max(8, e.clientX-w-pad);
+  if(y<8) y=e.clientY+16;
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+}
+function hideChartTip(){
+  const tip=$("#chartTip"); if(tip) tip.classList.remove("show");
+}
+function bindChartTips(root){
+  root.querySelectorAll("[data-tip]").forEach(el=>{
+    el.addEventListener("pointerenter", e=>showChartTip(el.dataset.tip, e));
+    el.addEventListener("pointermove", moveChartTip);
+    el.addEventListener("pointerleave", hideChartTip);
+  });
+}
+function paintOverviewCharts(o){
+  hideChartTip();
+  const box=$("#ovCharts"); if(!box) return;
+  const rows=o.months||[];
+  const keys=rows.map(r=>r.month);
+  const labels=keys.map((k,i)=>monthTick(k,i,keys));
+  const count=v=>Number(v||0).toLocaleString("es-MX");
+  const usersLine=lineChart(labels,[
+    {name:"Usuarios nuevos", color:"#2A8D92", values:rows.map(r=>r.users||0), axis:count, tip:count},
+  ]);
+  const opsLine=lineChart(labels,[
+    {name:"Operaciones", color:"#d97706", values:rows.map(r=>r.operations||0), axis:count, tip:count},
+  ]);
+  const volume=lineChart(labels,[
+    {name:"Volumen", color:"#0E3B43", values:rows.map(r=>r.volume||0), axis:compactMoney, tip:money},
+  ]);
+  const bars=barChart([
+    {label:"Saldo en membresías", value:Number(o.memberships.total_balance)||0, display:money(o.memberships.total_balance), color:"#0f9f8a"},
+    {label:"Ingreso por tarifas", value:Number(o.period.fees)||0, display:money(o.period.fees), color:"#2A8D92"},
+  ]);
+  const legend=(items)=>`<div class="legend">${items.map(([c,n])=>`<span><i style="background:${c}"></i>${esc(n)}</span>`).join("")}</div>`;
+  box.innerHTML=`
+    <article class="chart-card">
+      <h3>Usuarios por mes</h3>
+      <p class="hint">Usuarios nuevos en cada mes, hasta ${esc(fmtISODate(o.period.to))}.</p>
+      ${usersLine}
+      ${legend([["#2A8D92","Usuarios nuevos"]])}
+    </article>
+    <article class="chart-card">
+      <h3>Operaciones por mes</h3>
+      <p class="hint">Operaciones liquidadas en cada mes, hasta ${esc(fmtISODate(o.period.to))}.</p>
+      ${opsLine}
+      ${legend([["#d97706","Operaciones"]])}
+    </article>
+    <article class="chart-card">
+      <h3>Membresía e ingreso por tarifas</h3>
+      <p class="hint">Saldo actual de membresías frente al ingreso por tarifas del periodo seleccionado.</p>
+      ${bars}
+    </article>
+    <article class="chart-card">
+      <h3>Volumen de operaciones por mes</h3>
+      <p class="hint">Suma de los montos liquidados en cada mes, hasta ${esc(fmtISODate(o.period.to))}.</p>
+      ${volume}
+      ${legend([["#0E3B43","Volumen"]])}
+    </article>`;
+  bindChartTips(box);
+}
+
+/* ---------- Usuarios ---------- */
+function statusBadge(active){ return active?'<span class="badge b-ok">Activo</span>':'<span class="badge b-off">Desactivado</span>'; }
+function msBadge(s){ return s==="active"?'<span class="badge b-ok">active</span>':s==="blocked"?'<span class="badge b-off">blocked</span>':`<span class="badge b-warn">${esc(s)}</span>`; }
+async function loadUsers(){
+  const q=encodeURIComponent($("#uQ").value.trim()), st=$("#uStatus").value;
+  try{
+    const r=await api(`/admin/users?q=${q}&status=${st}&limit=${PAGE}&offset=${usersPage*PAGE}`);
+    $("#uRows").innerHTML=r.items.length?r.items.map(u=>`
+      <tr class="click" data-id="${esc(u.user_id)}">
+        <td class="mono">${esc(u.alias)}</td><td>${esc(u.display_name||"—")}</td>
+        <td>${u.client_type==="company"?"Empresa":"Persona"}</td><td>${esc(u.email||"—")}</td>
+        <td>${u.kyc_level}</td><td>${money(u.membership_balance)} ${msBadge(u.membership_status)}</td>
+        <td>${money(u.fees_paid||0)}</td>
+        <td>${statusBadge(u.is_active)}</td><td>${fdate(u.created_at)}</td></tr>`).join("")
+      :`<tr><td colspan="9" class="muted">Sin usuarios.</td></tr>`;
+    $("#uRows").querySelectorAll("tr[data-id]").forEach(tr=>tr.onclick=()=>openUser(tr.dataset.id));
+    pager("#uPager",r.total,usersPage,p=>{usersPage=p;loadUsers();});
+  }catch(e){ toast(e.message,"err"); }
+}
+
+async function openUser(id){
+  show("user");
+  $("#udBody").innerHTML='<p class="muted">Cargando…</p>';
+  try{
+    const u=await api("/admin/users/"+encodeURIComponent(id));
+    currentUser=u; renderUser(u); userTab("tx");
+  }catch(e){ $("#udBody").innerHTML=`<p class="muted">${esc(e.message)}</p>`; }
+}
+function renderUser(u){
+  const k=u.kyc||{}, docs=k.documents||{};
+  const limit=k.monthly_limit==null?"sin límite":money(k.monthly_limit);
+  const docsHtml=Object.keys(docs).length?Object.entries(docs).map(([n,v])=>
+    `<span class="badge ${v?"b-ok":"b-off"}">${esc(n.replace(/_/g," "))}: ${v?"sí":"no"}</span>`).join(" "):'<span class="muted">Sin datos de verificación.</span>';
+  $("#udBody").innerHTML=`
+    <h2>${esc(u.display_name||u.alias)} ${statusBadge(u.is_active)}</h2>
+    <p class="sub mono">${esc(u.alias)}</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="k" style="margin-bottom:10px">Perfil de soporte</div>
+        <div class="kv">
+          <span>Tipo</span><b>${u.client_type==="company"?"Empresa (moral)":"Persona física"}</b>
+          <span>Celular</span><b class="mono">${esc(u.phone_number||"—")}</b>
+          <span>Correo</span><b>${esc(u.email||"—")}</b>
+          ${u.client_type==="company"?`<span>Representante</span><b>${esc(u.representative_name||"—")}</b>`:""}
+          <span>Alta</span><b>${fdate(u.created_at)}</b>
+          <span>Perfil Financiero</span><b>Nivel ${k.kyc_level} · ${esc(k.limit_label||"")}</b>
+          <span>Abonos del mes</span><b>${money(k.monthly_used)} de ${limit}</b>
+          <span>Verificación</span><div>${docsHtml}</div>
+        </div>
+        <div class="actions" style="justify-content:flex-start">
+          <button class="sm" onclick="openExpediente()">Ver expediente</button>
+          ${u.is_active
+            ?`<button class="danger sm" onclick="askStatus(false)">Desactivar usuario</button>`
+            :`<button class="ghost sm" onclick="askStatus(true)">Reactivar usuario</button>`}
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="margin-bottom:10px">Membresía</div>
+        <div class="v">${money(u.membership_balance)}</div>
+        <div class="d" style="margin-bottom:10px">Estatus: ${msBadge(u.membership_status)} · tarifas pagadas ${money(u.stats.fees_paid)}</div>
+        <div class="kv">
+          <span>Recibido</span><b>${money(u.stats.received)}</b>
+          <span>Enviado</span><b>${money(u.stats.sent)}</b>
+          <span>Operaciones</span><b>${u.stats.transactions}</b>
+          <span>Cobros creados</span><b>${u.stats.charges}</b>
+        </div>
+        <div class="actions" style="justify-content:flex-start">
+          <button class="sm" onclick="askAdjust()">Ajustar saldo</button>
+          <button class="ghost sm" onclick="askMsStatus()">Cambiar estatus</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="k" style="margin-bottom:8px">Cuentas en bóveda (enmascaradas)</div>
+      ${u.vault_accounts.length?`<table><thead><tr><th>Alias</th><th>Banco</th><th>Titular</th><th>CLABE</th><th>Validada</th></tr></thead><tbody>
+        ${u.vault_accounts.map(a=>`<tr><td>${esc(a.alias||"—")}</td><td>${esc(a.bank_name)}</td><td>${esc(a.account_holder)}</td>
+          <td class="mono">${esc(a.clabe_masked)}</td><td>${a.is_validated?"sí":"no"}</td></tr>`).join("")}</tbody></table>`
+        :'<span class="muted">Sin cuentas registradas.</span>'}
+    </div>
+    <div class="tabs">
+      <button id="tab-tx" onclick="userTab('tx')">Movimientos</button>
+      <button id="tab-ch" onclick="userTab('ch')">Cobros</button>
+      <button id="tab-au" onclick="userTab('au')">Bitácora del usuario</button>
+    </div>
+    <div class="tbl" id="udTab"></div>`;
+}
+async function userTab(t){
+  ["tx","ch","au"].forEach(x=>{ const b=$("#tab-"+x); if(b) b.classList.toggle("on",x===t); });
+  const box=$("#udTab"); box.innerHTML='<p class="muted" style="padding:12px">Cargando…</p>';
+  const id=encodeURIComponent(currentUser.user_id);
+  try{
+    if(t==="tx"){
+      const r=await api(`/admin/users/${id}/transactions`);
+      box.innerHTML=txTable(r, true);
+    }else if(t==="ch"){
+      const r=await api(`/admin/users/${id}/charges`);
+      box.innerHTML=r.length?`<table><thead><tr><th>Creado</th><th>Folio</th><th>Concepto</th><th>Monto</th><th>% tarifa</th><th>Tipo</th><th>Usos</th><th>Estado</th><th>Vence</th></tr></thead><tbody>
+        ${r.map(c=>`<tr><td>${fdate(c.created_at)}</td><td class="mono">${esc(c.folio)}</td><td>${esc(c.concept)}</td>
+          <td>${c.open_amount?"Libre":money(c.amount)}</td><td>${feePcts(c.fee_rates)}</td><td>${esc(c.charge_type)}</td><td>${esc(c.uses)}</td>
+          <td>${esc(c.status)}</td><td>${fdate(c.expiration_at)}</td></tr>`).join("")}</tbody></table>`
+        :'<p class="muted" style="padding:12px">Sin cobros.</p>';
+    }else{
+      const r=await api(`/admin/users/${id}/audit`);
+      box.innerHTML=auditTable(r);
+    }
+  }catch(e){ box.innerHTML=`<p class="muted" style="padding:12px">${esc(e.message)}</p>`; }
+}
+
+/* ---------- Acciones con motivo ---------- */
+function openAct(title,text,extraHtml,onOk){
+  $("#actTitle").textContent=title; $("#actText").textContent=text;
+  $("#actExtra").innerHTML=extraHtml||""; $("#actReason").value="";
+  $("#actModal").classList.add("show");
+  $("#actOk").onclick=async()=>{
+    const reason=$("#actReason").value.trim();
+    if(reason.length<5){ toast("Escribe un motivo (mín. 5 caracteres)","err"); return; }
+    try{ await onOk(reason); closeAct(); await openUser(currentUser.user_id); }
+    catch(e){ toast(e.message,"err"); }
+  };
+}
+function closeAct(){ $("#actModal").classList.remove("show"); }
+
+let expFiles=[];
+function expObjectUrl(data, mime){
+  const comma=String(data).indexOf(",");
+  if(comma<0) throw new Error("archivo");
+  const header=String(data).slice(0, comma);
+  const found=/^data:([^;,]+)/i.exec(header);
+  const type=(found&&found[1])||mime||"application/octet-stream";
+  const raw=atob(String(data).slice(comma+1).replace(/\s/g,""));
+  const bytes=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes],{type}));
+}
+function expFileCard(f, idx){
+  const label=esc(f.label||"Adjunto");
+  const name=esc(f.name||"archivo");
+  const preview=f.url && (f.mime||"").toLowerCase().startsWith("image/")
+    ?`<img src="${esc(f.url)}" alt="${label}" onclick="openExpFile(${idx})">`
+    :"";
+  const open=f.url
+    ?`<button type="button" class="sm open" onclick="openExpFile(${idx})">Abrir</button>`
+    :`<span class="muted">${esc(f.note||"Sin archivo para abrir")}</span>`;
+  return `<div class="exp-file">${preview}${open}<div class="nm"><b>${label}</b><br>${name}</div></div>`;
+}
+function openExpFile(idx){
+  const f=expFiles[idx];
+  if(!f||!f.url){ toast("Este adjunto no tiene archivo para abrir","err"); return; }
+  const win=window.open(f.url, "_blank");
+  if(!win) toast("Permite ventanas emergentes para abrir el archivo","err");
+}
+function closeExpZoom(){
+  const z=$("#expZoom"); if(!z) return;
+  z.classList.remove("show");
+  const img=$("#expZoomImg"); if(img) img.removeAttribute("src");
+}
+function closeExpediente(){
+  closeExpZoom();
+  const m=$("#expModal"); if(m) m.classList.remove("show");
+}
+function paintExpediente(d){
+  const r=d.registro||{}, v=d.validacion||{};
+  expFiles=(d.adjuntos||[]).map(f=>{
+    const item={label:f.label, name:f.name, mime:f.mime||"", note:f.note||"", url:""};
+    if(typeof f.data==="string" && f.data.startsWith("data:")){
+      try{ item.url=expObjectUrl(f.data, f.mime); if(!item.mime){ const m=/^data:([^;,]+)/i.exec(f.data); item.mime=m?m[1]:""; } }
+      catch(e){ item.url=""; item.note="No se pudo leer el archivo"; }
+    }
+    return item;
+  });
+  const form=(d.form||[]).map(f=>{
+    const dateOk=!f.value || /^\d{4}-\d{2}-\d{2}$/.test(f.value);
+    const type=f.key==="birth_date" && dateOk?"date":"text";
+    const max=f.key==="curp"?18:f.key==="rfc"?13:300;
+    return `<label for="exp-${esc(f.key)}">${esc(f.label)}</label><input id="exp-${esc(f.key)}" data-exp="${esc(f.key)}" type="${type}" value="${esc(f.value||"")}" maxlength="${max}">`;
+  }).join("");
+  const files=expFiles.length
+    ?expFiles.map(expFileCard).join("")
+    :'<p class="muted" style="margin:0">Sin adjuntos. Si el usuario validó su perfil antes de guardar archivos, aquí solo aparecerá el nombre.</p>';
+  $("#expTitle").textContent="Expediente de "+(r.nombre||r.alias||"usuario");
+  $("#expSub").textContent=(r.alias||"")+" · la consulta y los cambios quedan en la bitácora";
+  $("#expBody").innerHTML=`
+    <div class="exp-sec">
+      <h4>Registro</h4>
+      <div class="exp-form">
+        <label>Tipo</label><b>${esc(r.tipo||"—")}</b>
+        <label>Alias</label><b class="mono">${esc(r.alias||"—")}</b>
+        <label>Celular</label><b class="mono">${esc(r.celular||"—")}</b>
+        <label for="expEmail">Correo</label><input id="expEmail" type="email" value="${esc(r.correo||"")}" maxlength="255">
+        <label>Alta</label><b>${fdate(r.alta)}</b>
+      </div>
+    </div>
+    <div class="exp-sec">
+      <h4>Validación del perfil · Nivel ${esc(v.nivel??"—")}</h4>
+      <div class="exp-form">${form||'<span class="muted">Sin datos editables.</span>'}</div>
+      <p class="muted" style="margin:8px 0 0">Última actualización: ${fdate(v.actualizado)}. El alias y el celular no se pueden cambiar.</p>
+    </div>
+    <div class="exp-sec">
+      <h4>Adjuntos</h4>
+      <div class="exp-files">${files}</div>
+    </div>
+    <div class="exp-sec">
+      <label for="expReason">Motivo del cambio</label>
+      <textarea id="expReason" rows="2" placeholder="Ej. Corrección solicitada por el usuario"></textarea>
+      <div class="actions"><button type="button" id="expSave" onclick="saveExpediente()">Guardar cambios</button></div>
+    </div>`;
+}
+async function openExpediente(){
+  if(!currentUser) return;
+  closeExpZoom();
+  $("#expTitle").textContent="Expediente";
+  $("#expSub").textContent=currentUser.alias||"";
+  $("#expBody").innerHTML='<p class="muted">Cargando…</p>';
+  $("#expModal").classList.add("show");
+  try{
+    const d=await api("/admin/users/"+encodeURIComponent(currentUser.user_id)+"/expediente");
+    paintExpediente(d);
+  }catch(e){
+    $("#expBody").innerHTML=`<p class="muted">${esc(e.message)}</p>`;
+  }
+}
+async function saveExpediente(){
+  if(!currentUser) return;
+  const reason=($("#expReason")&&$("#expReason").value||"").trim();
+  if(reason.length<5){ toast("Escribe un motivo (mín. 5 caracteres)","err"); return; }
+  const fields={};
+  document.querySelectorAll("#expBody [data-exp]").forEach(el=>{ fields[el.dataset.exp]=el.value.trim(); });
+  const btn=$("#expSave"); if(btn) btn.disabled=true;
+  try{
+    const d=await api("/admin/users/"+encodeURIComponent(currentUser.user_id)+"/expediente",{
+      method:"POST", body:{reason, email:($("#expEmail")&&$("#expEmail").value||"").trim(), fields}
+    });
+    paintExpediente(d);
+    toast("Expediente guardado");
+    const u=await api("/admin/users/"+encodeURIComponent(currentUser.user_id));
+    currentUser=u;
+    const on=document.querySelector("#udBody .tabs button.on");
+    const tab=on?on.id.replace("tab-",""):"tx";
+    renderUser(u);
+    userTab(tab);
+  }catch(e){
+    toast(e.message,"err");
+    if(btn) btn.disabled=false;
+  }
+}
+function askStatus(active){
+  openAct(active?"Reactivar usuario":"Desactivar usuario",
+    active?"El usuario podrá volver a entrar, cobrar, pagar y recibir."
+          :"El usuario no podrá entrar, cobrar, pagar ni recibir dinero. Sus sesiones abiertas se cierran.",
+    "", async reason=>{
+      await api(`/admin/users/${encodeURIComponent(currentUser.user_id)}/status`,{method:"POST",body:{active,reason}});
+      toast(active?"Usuario reactivado":"Usuario desactivado");
+    });
+}
+function askAdjust(){
+  openAct("Ajustar saldo de membresía",`Saldo actual: ${money(currentUser.membership_balance)}. Usa un monto positivo para acreditar o negativo para debitar.`,
+    `<label>Monto (MXN)</label><input id="adjAmt" type="number" step="0.01" placeholder="100.00 o -50.00">`,
+    async reason=>{
+      const amount=Number($("#adjAmt").value);
+      if(!amount){ throw {message:"Escribe un monto distinto de cero"}; }
+      const r=await api(`/admin/users/${encodeURIComponent(currentUser.user_id)}/membership/adjust`,{method:"POST",body:{amount,reason}});
+      toast("Nuevo saldo: "+money(r.balance));
+    });
+}
+function askMsStatus(){
+  openAct("Cambiar estatus de membresía","Una membresía suspendida o bloqueada no permite generar cobros.",
+    `<label>Nuevo estatus</label><select id="msSt"><option value="active">active</option><option value="suspended">suspended</option><option value="blocked">blocked</option></select>`,
+    async reason=>{
+      await api(`/admin/users/${encodeURIComponent(currentUser.user_id)}/membership/status`,{method:"POST",body:{status:$("#msSt").value,reason}});
+      toast("Estatus actualizado");
+    });
+}
+
+/* ---------- Movimientos ---------- */
+function txTable(list, profile){
+  const rateHead=profile?"<th>% tarifa</th>":"";
+  return list.length?`<table><thead><tr><th>Fecha</th><th>Folio</th><th>Pagó</th><th>Recibió</th><th>Monto</th><th>Tarifa</th>${rateHead}<th>Tipo</th><th>Rastreo</th></tr></thead><tbody>
+    ${list.map(t=>txRow(t, profile)).join("")}</tbody></table>`:'<p class="muted" style="padding:12px">Sin movimientos.</p>';
+}
+function txRow(t, profile){
+  const feeCell=profile?(t.fee_charged_here?money(t.fee):"—"):money(t.fee);
+  const rateCell=profile?`<td>${t.fee_charged_here?feePct(t.fee_rate):"—"}</td>`:"";
+  return `<tr><td>${fdate(t.settled)}</td><td class="mono"><a href="${esc(t.cep)}" target="_blank" rel="noopener">${esc(t.folio)}</a></td>
+    <td class="mono">${esc(t.payer||"externo")}</td><td class="mono">${esc(t.payee||"—")}</td>
+    <td>${money(t.amount)}</td><td>${feeCell}</td>${rateCell}<td>${t.direct?"Directo":"Cobro QR"}</td><td class="mono">${esc(t.clave||"—")}</td></tr>`;
+}
+let txReady=false;
+function applyTxPeriod(key, reload){
+  const now=new Date();
+  let from="", to=localISO(now);
+  if(key==="all"){ from=""; to=""; }
+  else if(key==="today"){ from=to; }
+  else if(key==="week"){
+    const d=new Date(now); d.setDate(d.getDate()-((d.getDay()+6)%7)); from=localISO(d);
+  }
+  else if(key==="month"){ from=localISO(new Date(now.getFullYear(), now.getMonth(), 1)); }
+  else if(key==="prev"){
+    from=localISO(new Date(now.getFullYear(), now.getMonth()-1, 1));
+    to=localISO(new Date(now.getFullYear(), now.getMonth(), 0));
+  }
+  else if(key==="quarter"){ from=localISO(new Date(now.getFullYear(), now.getMonth()-2, 1)); }
+  else if(key==="year"){ from=localISO(new Date(now.getFullYear(), 0, 1)); }
+  else { if(reload!==false){ txPage=0; loadTx(); } return; }
+  $("#tFrom").value=from; $("#tTo").value=to;
+  if(reload!==false){ txPage=0; loadTx(); }
+}
+function ensureTxDates(){
+  if(txReady) return;
+  txReady=true;
+  if(!$("#tFrom").value && !$("#tTo").value && $("#tPeriod").value==="month") applyTxPeriod("month", false);
+}
+function onTxPeriod(){
+  const key=$("#tPeriod").value;
+  if(key==="custom"){ txPage=0; loadTx(); return; }
+  applyTxPeriod(key);
+}
+function txDatesChanged(){
+  $("#tPeriod").value="custom";
+  txPage=0; loadTx();
+}
+function resetTxFilters(){
+  $("#tQ").value=""; $("#tUser").value=""; $("#tKind").value="";
+  $("#tPeriod").value="month";
+  applyTxPeriod("month");
+}
+function txStatus(s){
+  if(s==="PROCESSED") return '<span class="badge b-ok">Liquidada</span>';
+  if(s==="PENDING") return '<span class="badge b-warn">Pendiente</span>';
+  return `<span class="badge b-off">${esc(s||"—")}</span>`;
+}
+function txParty(alias, name){
+  return `<td class="who"><b class="mono">${esc(alias||"—")}</b>${name?`<small>${esc(name)}</small>`:""}</td>`;
+}
+function txSystemRow(t){
+  const concept=t.concept?`<small>${esc(t.concept)}</small>`:"";
+  return `<tr>
+    <td>${fdate(t.settled||t.created)}</td>
+    <td class="folio"><a class="mono" href="${esc(t.cep)}" target="_blank" rel="noopener">${esc(t.folio)}</a>${concept}</td>
+    ${txParty(t.payer||"externo", t.payer_name)}
+    ${txParty(t.payee, t.payee_name)}
+    <td>${t.direct?'<span class="badge b-info">Envío directo</span>':'<span class="badge b-ok">Cobro QR</span>'}</td>
+    <td class="amt">${money(t.amount)}</td>
+    <td>${money(t.fee)}</td>
+    <td>${feePct(t.fee_rate)}</td>
+    <td>${txStatus(t.status)}</td>
+    <td class="mono">${esc(t.clave||"—")}</td>
+  </tr>`;
+}
+async function loadTx(){
+  ensureTxDates();
+  const from=$("#tFrom").value, to=$("#tTo").value;
+  if(from && to && from>to){ toast("La fecha inicial no puede ser posterior a la final","err"); return; }
+  const p=new URLSearchParams();
+  p.set("q", $("#tQ").value.trim());
+  p.set("user", $("#tUser").value.trim());
+  p.set("kind", $("#tKind").value);
+  if(from) p.set("from", from);
+  if(to) p.set("to", to);
+  p.set("limit", String(PAGE));
+  p.set("offset", String(txPage*PAGE));
+  try{
+    const r=await api("/admin/transactions?"+p.toString());
+    const card=(k,v,d)=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d||""}</div></div>`;
+    $("#tSum").innerHTML=
+      card("Operaciones", r.total, "con los filtros actuales")+
+      card("Volumen", money(r.volume), "montos liquidados")+
+      card("Tarifas", money(r.fees), "descontadas a quien recibió");
+    $("#tSub").textContent=from&&to
+      ?`Del ${fmtISODate(from)} al ${fmtISODate(to)}. La tarifa y su porcentaje corresponden a quien recibe.`
+      :"Sin límite de fechas. La tarifa y su porcentaje corresponden a quien recibe.";
+    $("#tRows").innerHTML=r.items.length?r.items.map(txSystemRow).join("")
+      :`<tr><td colspan="10" class="muted">No hay movimientos con estos filtros.</td></tr>`;
+    pager("#tPager",r.total,txPage,p=>{txPage=p;loadTx();});
+  }catch(e){ toast(e.message,"err"); }
+}
+
+/* ---------- Bitácora ---------- */
+function sevBadge(s){ return `<span class="badge ${s==="CRITICAL"?"b-off":s==="WARNING"?"b-warn":"b-info"}">${esc(s)}</span>`; }
+function auditRow(l){
+  const det=l.details&&Object.keys(l.details).length?JSON.stringify(l.details):"";
+  return `<tr><td>${fdate(l.timestamp)}</td><td class="mono">${esc(l.operator)}</td><td>${esc(l.action)}</td>
+    <td>${esc(l.event_category)}</td><td>${sevBadge(l.severity)}</td><td class="mono">${esc(l.client_ip)}</td>
+    <td class="mono" style="max-width:320px;overflow:hidden;text-overflow:ellipsis" title="${esc(det)}">${esc(det)}</td>
+    <td class="mono" title="${esc(l.integrity_hash)}">${esc((l.integrity_hash||"").slice(0,12))}…</td></tr>`;
+}
+function auditTable(list){
+  return list.length?`<table><thead><tr><th>Fecha</th><th>Operador</th><th>Acción</th><th>Categoría</th><th>Sev.</th><th>IP</th><th>Detalle</th><th>Hash</th></tr></thead><tbody>
+    ${list.map(auditRow).join("")}</tbody></table>`:'<p class="muted" style="padding:12px">Sin eventos.</p>';
+}
+async function loadAudit(){
+  const q=encodeURIComponent($("#aQ").value.trim()), cat=encodeURIComponent($("#aCat").value), sev=$("#aSev").value;
+  try{
+    const r=await api(`/admin/audit-logs?q=${q}&category=${cat}&severity=${sev}&limit=${PAGE}&offset=${auditPage*PAGE}`);
+    const sel=$("#aCat"), cur=sel.value;
+    sel.innerHTML='<option value="">Todas las categorías</option>'+r.categories.map(c=>`<option ${c===cur?"selected":""}>${esc(c)}</option>`).join("");
+    $("#aRows").innerHTML=r.items.length?r.items.map(auditRow).join(""):`<tr><td colspan="8" class="muted">Sin eventos.</td></tr>`;
+    pager("#aPager",r.total,auditPage,p=>{auditPage=p;loadAudit();});
+  }catch(e){ toast(e.message,"err"); }
+}
+async function verifyChain(){
+  const el=$("#chainStatus"); el.textContent="Verificando…";
+  try{
+    const r=await api("/admin/audit-logs/verify");
+    el.innerHTML=r.chain_valid?`<span style="color:var(--ok);font-weight:700">✓ Cadena íntegra · ${r.total} eventos</span>`
+      :`<span style="color:var(--danger);font-weight:700">✗ Ruptura en el evento ${esc(r.first_broken_id)}</span>`;
+  }catch(e){ el.textContent=e.message; }
+}
+
+/* ---------- Mi cuenta ---------- */
+async function changePassword(){
+  const body={current_password:$("#pwCur").value,new_password:$("#pwNew").value,totp_code:$("#pwTotp").value.trim()};
+  if(body.new_password.length<12){ toast("La nueva contraseña debe tener al menos 12 caracteres","err"); return; }
+  try{
+    await api("/admin/me/password",{method:"POST",body});
+    ["#pwCur","#pwNew","#pwTotp"].forEach(s=>$(s).value="");
+    toast("Contraseña actualizada");
+  }catch(e){ toast(e.message,"err"); }
+}
+
+(async function boot(){
+  TOKEN=sessionStorage.getItem(SS_KEY);
+  if(TOKEN){ try{ await enter(); }catch(e){ logout(); } }
+})();
+</script>
+</body>
+</html>

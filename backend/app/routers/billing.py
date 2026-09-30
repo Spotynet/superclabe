@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from ..audit import write_audit
 from ..notify import notify
-from ..alias_norm import find_user_by_alias
+from ..alias_norm import find_operational_user, find_user_by_alias
 from ..config import settings
 from ..crypto import hash_password
 from ..database import get_db
@@ -122,7 +122,7 @@ def create_charge(body: ChargeIn, request: Request,
     if body.charge_type == "TARGETED":
         if not body.target_alias:
             raise HTTPException(422, "Un cobro personalizado requiere el alias del usuario destino")
-        target = find_user_by_alias(db, body.target_alias)
+        target = find_operational_user(db, body.target_alias)
         if not target:
             raise HTTPException(404, "Usuario destino no encontrado en el sistema")
         target_user_id = target.id
@@ -248,15 +248,14 @@ def _user_out(u: User) -> FavoriteOut:
 @router.get("/users/search", response_model=list[FavoriteOut])
 def search_users(q: str = "", limit: int = 8,
                  user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Busca usuarios del sistema por alias, nombre o correo (excluye al propio)."""
-    query = db.query(User).filter(User.id != user.id)
+    """Busca usuarios del sistema por alias (celular) o nombre (excluye al propio)."""
+    query = db.query(User).filter(User.id != user.id, User.role == "user", User.is_active.is_(True))
     if q:
         like = f"%{q.lower()}%"
         from sqlalchemy import func, or_
         query = query.filter(or_(
             func.lower(User.alias).like(like),
             func.lower(func.coalesce(User.display_name, "")).like(like),
-            func.lower(func.coalesce(User.email, "")).like(like),
         ))
     return [_user_out(u) for u in query.order_by(User.alias).limit(max(1, min(limit, 50))).all()]
 
@@ -274,7 +273,7 @@ def list_favorites(user: User = Depends(get_current_user), db: Session = Depends
 
 @router.post("/favorites/{alias}", response_model=list[FavoriteOut], status_code=201)
 def add_favorite(alias: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    target = find_user_by_alias(db, alias)
+    target = find_operational_user(db, alias)
     if not target:
         raise HTTPException(404, "Usuario no encontrado")
     if target.id == user.id:

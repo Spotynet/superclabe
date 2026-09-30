@@ -1,4 +1,8 @@
-"""Recalcula calculated_fee de todas las transacciones con comisión 0.05% + I.V.A. 16%.
+"""Recalcula calculated_fee de todas las transacciones con la tarifa vigente + I.V.A. 16%.
+
+La tarifa vigente es la del modelo escalonado v5 (app/fees.py). Ejecutarlo aplica
+v5 RETROACTIVAMENTE a operaciones liquidadas con el esquema anterior (0.05%);
+usa --dry-run primero.
 
 También ajusta el saldo de membresía del payee por la diferencia (nuevo − anterior),
 para que el consumo mostrado coincida con lo debitado.

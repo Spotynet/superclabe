@@ -27,9 +27,21 @@ class Settings:
     JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-jwt-secret-cambiar-en-produccion")
     JWT_ALG: str = "HS256"
     JWT_EXPIRE_MIN: int = int(os.getenv("JWT_EXPIRE_MIN", "20"))  # Regla 71a: inactividad 20 min
+    ADMIN_JWT_EXPIRE_MIN: int = int(os.getenv("ADMIN_JWT_EXPIRE_MIN", "30"))
 
     # Reglas de negocio
-    MEMBERSHIP_FEE_RATE: float = 0.0005  # 0.05% de tarifa de software al emisor
+    # Modelo de negocio v5: tarifas escalonadas por monto de la operación.
+    # La tasa del rango aplica sobre el monto completo (no es marginal).
+    # Un monto pertenece al último rango cuyo "min" sea <= monto.
+    FEE_MODEL_VERSION: str = "v5"
+    FEE_TIERS = [
+        {"min": 0.00, "max": 999.99, "rate": 0.0100,
+         "segment": "Micro-comercio informal, taxis, tienditas"},
+        {"min": 1000.00, "max": 9999.99, "rate": 0.0083,
+         "segment": "Comercio medio B2B, restaurantes y proveedores"},
+        {"min": 10000.00, "max": None, "rate": 0.0050,
+         "segment": "Corporativos medianos e integraciones API"},
+    ]
     IVA_RATE: float = 0.16                # 16% IVA sobre la tarifa de software
     MAX_WHATSAPP_REMINDERS: int = 3       # Máximo 3 recordatorios por cobro
     SESSION_TIMEOUT_MIN: int = 20         # Cierre por inactividad (Circular 9/2026)

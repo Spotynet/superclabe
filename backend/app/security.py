@@ -21,13 +21,18 @@ from .models import User
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
-def create_access_token(user_id: str) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=settings.JWT_EXPIRE_MIN)
-    payload = {"sub": str(user_id), "exp": expire}
+SCOPE_USER = "user"
+SCOPE_ADMIN = "admin"
+
+
+def create_access_token(user_id: str, scope: str = SCOPE_USER) -> str:
+    minutes = settings.ADMIN_JWT_EXPIRE_MIN if scope == SCOPE_ADMIN else settings.JWT_EXPIRE_MIN
+    expire = datetime.utcnow() + timedelta(minutes=minutes)
+    payload = {"sub": str(user_id), "scope": scope, "exp": expire}
     return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALG)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def _user_from_token(token: str | None, db: Session, scope: str) -> User:
     cred_err = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciales inválidas o sesión expirada",
@@ -40,9 +45,35 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         uid = payload.get("sub")
     except JWTError:
         raise cred_err
+    if (payload.get("scope") or SCOPE_USER) != scope:
+        raise cred_err
     user = db.query(User).filter(User.id == uid).first()
     if not user:
         raise cred_err
+    if not user.is_active:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, {
+            "code": "USER_INACTIVE",
+            "message": "Tu usuario está desactivado. Contacta a soporte.",
+        })
+    return user
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    """Usuario operativo: sólo accede a sus propios datos y operaciones."""
+    user = _user_from_token(token, db, SCOPE_USER)
+    if user.role != "user":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, {
+            "code": "ADMIN_CANNOT_OPERATE",
+            "message": "La cuenta de administración no puede operar a nombre de usuarios.",
+        })
+    return user
+
+
+def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    """Super administrador: gestión y auditoría, sin capacidades operativas."""
+    user = _user_from_token(token, db, SCOPE_ADMIN)
+    if user.role != "superadmin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Acceso restringido al super administrador")
     return user
 
 

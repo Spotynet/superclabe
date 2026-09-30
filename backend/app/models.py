@@ -51,17 +51,19 @@ def _uuid():
 class User(Base):
     __tablename__ = "users"
     id = Column(GUID(), primary_key=True, default=_uuid)
-    alias = Column(String(60), nullable=False, unique=True)  # identificador $@... único
+    alias = Column(String(60), nullable=False, unique=True)  # $@ + celular, único
     username = Column(String(50), nullable=True)             # compatibilidad (= alias)
-    email = Column(String(255), nullable=True, unique=True)  # llave única (normalizado a minúsculas)
+    email = Column(String(255), nullable=True)               # sólo informativo, puede repetirse
     password_hash = Column(String(255), nullable=True)       # sin contraseña por ahora
-    phone_number = Column(String(15), nullable=True, unique=True)  # llave única (solo dígitos)
+    phone_number = Column(String(15), nullable=True, unique=True)  # 10 dígitos, base del alias
     client_type = Column(String(20), nullable=False)   # 'company' | 'individual'
     display_name = Column(String(150), nullable=True)        # nombre / razón social
     representative_name = Column(String(150), nullable=True)  # representante legal (empresa)
     kyc_level = Column(Integer, nullable=False, default=1)  # 1..4 (Regla 72a)
     totp_secret = Column(String(64), nullable=True)     # 2FA (Regla 71a)
     is_active = Column(Boolean, nullable=False, default=True)
+    # 'user' opera sus propios cobros/pagos; 'superadmin' sólo administra (nunca opera a nombre de nadie)
+    role = Column(String(20), nullable=False, default="user", server_default="user")
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
     company_metadata = relationship("CompanyMetadata", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -73,6 +75,7 @@ class User(Base):
         CheckConstraint("alias LIKE '$@%'", name="users_alias_prefix_check"),
         CheckConstraint("client_type IN ('company','individual')", name="users_client_type_check"),
         CheckConstraint("kyc_level BETWEEN 1 AND 4", name="users_kyc_level_check"),
+        CheckConstraint("role IN ('user','superadmin')", name="users_role_check"),
     )
 
 
@@ -100,6 +103,18 @@ class IndividualMetadata(Base):
     user = relationship("User", back_populates="individual_metadata")
 
 
+class KycDossier(Base):
+    """Expediente cifrado del registro y la validación del Perfil Financiero.
+
+    El JSON (datos de identidad y adjuntos) va cifrado en reposo. Solo el
+    super administrador lo consulta, y cada consulta queda en la bitácora.
+    """
+    __tablename__ = "kyc_dossiers"
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    payload_encrypted = Column(Text, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class VaultAccount(Base):
     """Bóveda bancaria cifrada (Regla 58a)."""
     __tablename__ = "vault_accounts"
@@ -118,7 +133,7 @@ class VaultAccount(Base):
 
 
 class Membership(Base):
-    """Saldo prepago de membresía para el cobro del 0.05%."""
+    """Saldo prepago de membresía para el cobro de la tarifa escalonada v5."""
     __tablename__ = "memberships"
     id = Column(GUID(), primary_key=True, default=_uuid)
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
@@ -203,7 +218,7 @@ class Transaction(Base):
     payer_id = Column(GUID(), ForeignKey("users.id"), nullable=True)
     payee_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
     amount = Column(Numeric(12, 2), nullable=False)
-    calculated_fee = Column(Numeric(12, 2), nullable=False, default=0)  # 0.05% + I.V.A.
+    calculated_fee = Column(Numeric(12, 2), nullable=False, default=0)  # tarifa escalonada v5 + I.V.A.
     clave_rastreo = Column(String(100), nullable=True)     # Clave de rastreo SPEI
     status = Column(String(20), nullable=False, default="PENDING")
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)

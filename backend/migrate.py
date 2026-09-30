@@ -6,6 +6,8 @@ existente sin destruir datos:
   * charges: open_amount, charge_type, target_user_id, max_uses, uses_count,
     show_payee (+ amount pasa a admitir NULL para cobros de monto libre).
   * favorites: tabla nueva de favoritos por usuario.
+  * users: celular único (base del alias); el correo deja de ser único;
+    columna role (user | superadmin).
 
 Detecta las columnas ya presentes y sólo agrega lo que falta, por lo que es
 seguro re-ejecutarlo. En PostgreSQL se recomienda además el SQL declarativo de
@@ -21,7 +23,7 @@ from sqlalchemy import inspect, text
 
 from app.database import Base, engine
 import app.models  # noqa: F401  (registra los modelos en Base.metadata)
-from app.models import Favorite
+from app.models import Favorite, KycDossier
 
 # Columnas nuevas de `charges` con su tipo por dialecto.
 # (nombre, tipo_postgresql, tipo_sqlite)
@@ -67,23 +69,32 @@ def plan():
     if "favorites" not in insp.get_table_names():
         actions.append(("create_favorites", None))
 
-    # Unicidad de email / celular (llaves de usuario)
+    if "kyc_dossiers" not in insp.get_table_names():
+        actions.append(("create_kyc_dossiers", None))
+
+    # Rol del usuario (user | superadmin)
+    user_cols = _existing_columns(insp, "users")
+    if user_cols is not None and "role" not in user_cols:
+        actions.append(("sql", "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'"))
+        if dialect == "postgresql":
+            actions.append(("sql", "ALTER TABLE users ADD CONSTRAINT users_role_check "
+                                   "CHECK (role IN ('user','superadmin'))"))
+
+    # Celular único (base del alias). El correo es informativo: no debe ser único.
     if "users" in insp.get_table_names():
         idx_names = {i["name"] for i in insp.get_indexes("users")}
+        if "ux_users_email" in idx_names:
+            actions.append(("sql", "DROP INDEX IF EXISTS ux_users_email"))
         if dialect == "postgresql":
-            if "ux_users_email" not in idx_names:
-                actions.append(("sql",
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email "
-                    "ON users (lower(email)) WHERE email IS NOT NULL AND email <> ''"))
+            uniq = {u["name"] for u in insp.get_unique_constraints("users")}
+            if "users_email_key" in uniq:
+                actions.append(("sql", "ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key"))
             if "ux_users_phone_number" not in idx_names:
                 actions.append(("sql",
                     "CREATE UNIQUE INDEX IF NOT EXISTS ux_users_phone_number "
                     "ON users (phone_number) WHERE phone_number IS NOT NULL AND phone_number <> ''"))
         else:
-            # SQLite: índices únicos simples (NULL permitido varias veces)
-            if "ux_users_email" not in idx_names:
-                actions.append(("sql",
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email ON users (email)"))
+            # SQLite: índice único simple (NULL permitido varias veces)
             if "ux_users_phone_number" not in idx_names:
                 actions.append(("sql",
                     "CREATE UNIQUE INDEX IF NOT EXISTS ux_users_phone_number ON users (phone_number)"))
@@ -106,7 +117,12 @@ def main():
 
     print(f"→ {len(pending)} acción(es) pendiente(s) en dialecto '{dialect}':")
     for kind, payload in pending:
-        print(f"   • {'CREATE TABLE favorites' if kind == 'create_favorites' else payload}")
+        label = payload
+        if kind == "create_favorites":
+            label = "CREATE TABLE favorites"
+        elif kind == "create_kyc_dossiers":
+            label = "CREATE TABLE kyc_dossiers"
+        print(f"   • {label}")
 
     if check_only:
         print("\n(--check) No se aplicó ningún cambio.")
@@ -118,6 +134,8 @@ def main():
                 conn.execute(text(payload))
             elif kind == "create_favorites":
                 Favorite.__table__.create(bind=conn, checkfirst=True)
+            elif kind == "create_kyc_dossiers":
+                KycDossier.__table__.create(bind=conn, checkfirst=True)
     print("\n✓ Migración aplicada correctamente.")
 
 

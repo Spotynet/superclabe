@@ -14,7 +14,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .database import Base, SessionLocal, engine
-from .routers import auth, billing, checkout, compliance, kyc, membership, notifications, vault
+from .routers import admin, auth, billing, checkout, compliance, kyc, membership, notifications, vault
 
 
 def _read_app_version() -> str:
@@ -65,16 +65,18 @@ def seed_demo_users():
             t = sum((int(base[i]) * w[i % 3]) % 10 for i in range(17))
             clabe = base + str((10 - (t % 10)) % 10)
         demos = [
-            {"alias": "$@empresa.demo", "client_type": "company", "kyc_level": 2,
+            {"phone": "5510000001", "client_type": "company", "kyc_level": 2,
              "display_name": "Comercializadora de México S.A.", "rep": "Ana López",
              "email": "contacto@demo.mx", "balance": 50, "vault": True},
-            {"alias": "$@juan.perez", "client_type": "individual", "kyc_level": 2,
+            {"phone": "5510000002", "client_type": "individual", "kyc_level": 2,
              "display_name": "Juan Pérez López", "email": "juan.perez@mail.mx", "balance": 20},
-            {"alias": "$@maria.lopez", "client_type": "individual", "kyc_level": 1,
+            {"phone": "5510000003", "client_type": "individual", "kyc_level": 1,
              "display_name": "María López Ruiz", "email": "maria.lopez@mail.mx", "balance": 0},
         ]
         for d in demos:
+            d["alias"] = "$@" + d["phone"]
             u = User(alias=d["alias"], username=d["alias"], email=d["email"],
+                     phone_number=d["phone"],
                      client_type=d["client_type"], display_name=d["display_name"],
                      representative_name=d.get("rep"), kyc_level=d["kyc_level"],
                      totp_secret=generate_totp_secret())
@@ -107,8 +109,8 @@ app = FastAPI(
     description=(
         "Plataforma de cobranza y enrutamiento de transferencias conforme a la "
         "Circular 14/2017 (SPEI), Circular 12/2019 (CoDi) y Dimo de Banxico. "
-        "Modelo PSPI: el dinero viaja cuenta-a-cuenta; sólo se deduce el 0.05% "
-        "de membresía. Sin captación de fondos (no IFPE)."
+        "Modelo PSPI: el dinero viaja cuenta-a-cuenta; sólo se deduce la tarifa "
+        "escalonada v5 de membresía (1.00% / 0.83% / 0.50% + I.V.A.). Sin captación de fondos (no IFPE)."
     ),
 )
 
@@ -116,7 +118,7 @@ app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
-for r in (auth, kyc, vault, billing, checkout, membership, notifications, compliance):
+for r in (auth, kyc, vault, billing, checkout, membership, notifications, compliance, admin):
     app.include_router(r.router)
 
 

@@ -36,5 +36,13 @@ def find_user_by_alias(db: Session, alias: str | None) -> User | None:
     return db.query(User).filter(func.lower(User.alias) == key).first()
 
 
+def find_operational_user(db: Session, alias: str | None) -> User | None:
+    """Usuario que puede cobrar, pagar o recibir: activo y no administrador."""
+    user = find_user_by_alias(db, alias)
+    if user is None or user.role != "user" or not user.is_active:
+        return None
+    return user
+
+
 def alias_taken(db: Session, alias: str | None) -> bool:
     return find_user_by_alias(db, alias) is not None

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     alias VARCHAR(60) UNIQUE NOT NULL CHECK (alias LIKE '$@%'),  -- identificador $@...
     username VARCHAR(50),                       -- compatibilidad (= alias)
     email VARCHAR(255),
-    password_hash VARCHAR(255),                 -- sin contraseña por ahora
+    password_hash VARCHAR(255),                 -- sólo super admin (PBKDF2)
     phone_number VARCHAR(15),
     client_type VARCHAR(20) NOT NULL CHECK (client_type IN ('company','individual')),
     display_name VARCHAR(150),                  -- nombre o razón social
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     kyc_level INTEGER NOT NULL DEFAULT 1 CHECK (kyc_level BETWEEN 1 AND 4),
     totp_secret VARCHAR(64),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('user','superadmin')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -37,6 +38,12 @@ CREATE TABLE IF NOT EXISTS individuals_metadata (
     id_front_path VARCHAR(512),
     id_back_path VARCHAR(512),
     selfie_liveness_path VARCHAR(512),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS kyc_dossiers (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    payload_encrypted TEXT NOT NULL,       -- AES-256: datos y adjuntos del perfil
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -106,7 +113,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     payer_id UUID REFERENCES users(id),
     payee_id UUID NOT NULL REFERENCES users(id),
     amount NUMERIC(12,2) NOT NULL,
-    calculated_fee NUMERIC(12,2) NOT NULL DEFAULT 0,   -- 0.05% + I.V.A.
+    calculated_fee NUMERIC(12,2) NOT NULL DEFAULT 0,   -- tarifa escalonada v5 + I.V.A.
     clave_rastreo VARCHAR(100),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMPTZ DEFAULT now(),

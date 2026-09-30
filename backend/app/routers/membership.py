@@ -1,4 +1,4 @@
-"""Módulo 5: Gestión de saldo de membresía prepago (tarifa 0.05%)."""
+"""Módulo 5: Gestión de saldo de membresía prepago (tarifas escalonadas v5)."""
 
 # SC-DEV-SIG-v1: iVi3vbS2VRLUu-6fT8g3J1lcelssO75o9C5Ena1riU20MCx0t03PxWM3g6PGiOG7C8YUTSbBWHs6dqQrFtpY03cXDVPKrpm0dcRQoIQIvF07-yG5KEAEFszuX03PDFRJKmIQE7Zf47dd92o6zP4=
 # (firma de autoría cifrada AES-256-GCM — verificar con tools/verify_dev_signature.py)
@@ -8,13 +8,14 @@ from sqlalchemy.orm import Session
 from ..audit import write_audit
 from ..config import settings
 from ..database import get_db
-from ..fees import calc_membership_fee, money2
+from ..fees import calc_membership_fee, fee_tiers_public, money2
 from ..models import Membership, User
 from ..notify import notify
 from ..schemas import DeductIn, RechargeIn
 from ..security import get_current_user
 
-router = APIRouter(prefix="/api/v1/membership", tags=["5. Membresía prepago (0.05% + I.V.A.)"])
+router = APIRouter(prefix="/api/v1/membership",
+                   tags=["5. Membresía prepago (tarifas escalonadas v5 + I.V.A.)"])
 
 
 def _membership(db, user):
@@ -30,9 +31,16 @@ def _membership(db, user):
 @router.get("")
 def get_membership(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     m = _membership(db, user)
+    tariffs = fee_tiers_public()
     return {"balance": float(m.balance), "status": m.status,
-            "fee_rate": settings.MEMBERSHIP_FEE_RATE, "iva_rate": settings.IVA_RATE,
-            "currency": "MXN"}
+            "fee_model": tariffs["model"], "fee_tiers": tariffs["tiers"],
+            "iva_rate": settings.IVA_RATE, "currency": "MXN"}
+
+
+@router.get("/tariffs")
+def get_tariffs():
+    """Tabla pública de tarifas escalonadas v5 (sin autenticación)."""
+    return fee_tiers_public()
 
 
 @router.post("/recharge")
@@ -60,7 +68,7 @@ def recharge(body: RechargeIn, request: Request,
 
 @router.post("/deduct")
 def deduct(body: DeductIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Deducción lógica del 0.05% + I.V.A. (procesamiento interno).
+    """Deducción lógica de la tarifa escalonada v5 + I.V.A. (procesamiento interno).
 
     Si el saldo es insuficiente, bloquea la generación de nuevas transacciones
     (402 Payment Required).
@@ -78,7 +86,7 @@ def deduct(body: DeductIn, user: User = Depends(get_current_user), db: Session =
         raise HTTPException(402, {
             "error": "INSUFFICIENT_MEMBERSHIP_BALANCE", "current_balance": float(m.balance),
             "required_fee": fee, "base_fee": fees["base_fee"], "iva": fees["iva"],
-            "status": "BLOCKED",
+            "fee_rate": fees["fee_rate"], "status": "BLOCKED",
             "system_action": "DENY_TRANSACTION_GENERATION",
             "message": "Saldo de membresía insuficiente. Realiza una recarga.",
         })
@@ -86,6 +94,6 @@ def deduct(body: DeductIn, user: User = Depends(get_current_user), db: Session =
     m.balance = money2(prev - fee)
     db.commit()
     return {"user_id": user.id, "calculated_fee": fee, "base_fee": fees["base_fee"],
-            "iva": fees["iva"], "previous_balance": prev,
+            "iva": fees["iva"], "fee_rate": fees["fee_rate"], "previous_balance": prev,
             "new_balance": float(m.balance), "status": "APPROVED",
             "system_action": "ALLOW_TRANSACTION"}

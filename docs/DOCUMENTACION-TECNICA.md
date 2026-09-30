@@ -22,7 +22,7 @@ como **capa de software no-custodia** sobre la infraestructura del Banco de Méx
 CoDi y Dimo). El dinero viaja directamente cuenta-a-cuenta entre los bancos de los
 usuarios; la plataforma **nunca capta ni retiene fondos**, evitando la clasificación como
 Institución de Fondos de Pago Electrónico (IFPE) y su capital mínimo de 5 millones de UDIS.
-La única deducción es una tarifa de licenciamiento de software del **0.05%** debitada de un
+La única deducción es una tarifa de licenciamiento de software **escalonada (v5)** —1.00% de $100 a $999.99, 0.83% de $1,000 a $9,999.99 y 0.50% desde $10,000, + I.V.A.— debitada de un
 saldo de membresía prepagado del emisor.
 
 El sistema implementa seis módulos regulatorios: onboarding con KYC gradual, bóveda
@@ -41,7 +41,7 @@ los controles de seguridad, el frontend, los flujos operativos y el despliegue e
 | Figura regulatoria | Proveedor de Servicios de Participación Indirecta (PSPI) / Iniciador de Pagos, patrocinado por un participante directo (banco o IFPE). |
 | Marco normativo | Circular 14/2017 (Reglas del SPEI), Circular 12/2019 (CoDi), Ley Fintech, LTOSF, Guías de homologación UX (Circular 9/2026). |
 | No-custodia | No hay cuentas de depósito, wallets ni crédito. Solo enrutamiento e información. |
-| Monetización | Membresía prepago; se debita 0.05% al emisor por transacción liquidada. Prohibido cobrar comisión al receptor CoDi. |
+| Monetización | Membresía prepago; se debita la tarifa escalonada v5 + I.V.A. a la membresía de quien recibe por transacción liquidada. Quien paga no paga comisión. |
 | Bloqueo lógico | Si el saldo de membresía llega a cero, se impide generar/procesar nuevas operaciones hasta recargar. |
 
 ---
@@ -125,19 +125,19 @@ elegancia (muestra el contenido del QR y permite pegar/simular el escaneo).
 ```
 backend/app/
 ├── main.py        Punto de entrada FastAPI; registra routers y sirve el frontend.
-├── config.py      Variables de entorno y reglas de negocio (tasa 0.05%, límites KYC, TTL sesión).
+├── config.py      Variables de entorno y reglas de negocio (tarifas escalonadas v5, límites KYC, TTL sesión).
 ├── database.py    Motor SQLAlchemy y sesión (PostgreSQL o SQLite fallback).
 ├── models.py      Modelos ORM (8 tablas) con tipo UUID portable.
 ├── schemas.py     Contratos Pydantic (request/response).
 ├── crypto.py      AES-256, enmascaramiento CLABE, validación módulo-10, hash encadenado, PBKDF2.
 ├── security.py    JWT de sesión, 2FA TOTP, dependencia get_current_user.
 ├── audit.py       Escritura de bitácora inmutable (hash SHA-256 encadenado).
-└── routers/       auth, kyc, vault, billing, checkout, membership, compliance.
+└── routers/       auth, kyc, vault, billing, checkout, membership, compliance, admin.
 ```
 
 Responsabilidades clave:
 
-- **`config.py`** centraliza parámetros: `MEMBERSHIP_FEE_RATE = 0.0005`, `MAX_WHATSAPP_REMINDERS = 3`,
+- **`config.py`** centraliza parámetros: `FEE_TIERS` (v5: 1.00% / 0.83% / 0.50%), `IVA_RATE = 0.16`, `MAX_WHATSAPP_REMINDERS = 3`,
   `SESSION_TIMEOUT_MIN = 20`, `KYC_LIMITS_UDIS = {1:0, 2:3000, 3:8000, 4:None}`.
 - **`database.py`** usa `check_same_thread` para SQLite y expone `get_db()` como dependencia.
 - **`main.py`** ejecuta `create_all(checkfirst=True)` de forma idempotente (a prueba de
@@ -151,13 +151,13 @@ Ocho tablas relacionales. Los campos sensibles se almacenan **cifrados con AES-2
 
 | Tabla | Propósito | Campos sensibles / notas |
 |-------|-----------|--------------------------|
-| `users` | Identidad de usuario | `alias` único con prefijo `$@`; `client_type` (company/individual); `kyc_level` 1–4; `totp_secret`. Sin contraseña por ahora. |
+| `users` | Identidad de usuario | `alias` único = `$@` + celular de 10 dígitos; `phone_number` único; `email` informativo (no único); `client_type` (company/individual); `kyc_level` 1–4; `totp_secret`. Sin contraseña por ahora. |
 | `companies_metadata` | Expediente de empresa | `rfc_encrypted` (AES-256), razón social, representante, CSF, logo. |
 | `individuals_metadata` | Expediente de persona | `curp_encrypted`, `full_name_encrypted` (AES-256), rutas INE/liveness. |
 | `vault_accounts` | Bóveda bancaria | `clabe_encrypted` (AES-256), `clabe_masked`, `clabe_hash` (SHA-256 anti-duplicados). |
 | `memberships` | Saldo prepago | `balance` (Numeric 12,4), `status` (active/suspended/blocked). |
 | `charges` | Cobros CoDi (Apéndice AD) | `folio_codi` único, monto, concepto (≤40), referencia (7 díg.), vigencia, `pin_hash`, `status`. |
-| `transactions` | Liquidaciones inmutables | `folio_codi`, `calculated_fee` (0.05%), `clave_rastreo` SPEI, `settled_at`. |
+| `transactions` | Liquidaciones inmutables | `folio_codi`, `calculated_fee` (tarifa v5 + IVA), `clave_rastreo` SPEI, `settled_at`. |
 | `audit_logs` | Bitácora inmutable | `integrity_hash` (SHA-256 encadenado), `severity`, `event_category`. |
 
 **Portabilidad de UUID:** el tipo `GUID` usa `UUID` nativo en PostgreSQL y `CHAR(36)` en
@@ -181,8 +181,8 @@ Documentación interactiva en `/docs` (Swagger) y `/redoc`.
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/auth/register` | Crea usuario por alias `$@…` y tipo (Persona/Empresa), sin contraseña. |
-| POST | `/auth/login` | Inicia sesión por alias; devuelve JWT y `totp_secret` la primera vez. |
+| POST | `/auth/register` | Crea usuario con celular (alias `$@<celular>`), tipo (Persona/Empresa) y correo opcional, sin contraseña. |
+| POST | `/auth/login` | Inicia sesión por alias de celular; devuelve JWT y `totp_secret` la primera vez. |
 | GET  | `/auth/me` | Perfil del usuario autenticado. |
 | GET  | `/auth/users` | Lista de alias registrados (para el selector de login). |
 
@@ -214,7 +214,7 @@ Documentación interactiva en `/docs` (Swagger) y `/redoc`.
 |--------|------|-------------|
 | POST | `/checkout/scan` | Decodifica el contenido de un QR y devuelve el checkout. |
 | GET  | `/checkout/{folio}` | Vista pública del pagador (beneficiario enmascarado + CEP). |
-| POST | `/checkout/{folio}/pay` | Liquida, genera clave de rastreo y deduce el 0.05%. |
+| POST | `/checkout/{folio}/pay` | Liquida, genera clave de rastreo y deduce la tarifa escalonada v5. |
 
 ### 7.6 Módulo 5 — Membresía (`/membership`)
 
@@ -222,17 +222,24 @@ Documentación interactiva en `/docs` (Swagger) y `/redoc`.
 |--------|------|-------------|
 | GET  | `/membership` | Saldo y estado de la membresía. |
 | POST | `/membership/recharge` | Recarga de saldo prepago. |
-| POST | `/membership/deduct` | Deducción interna del 0.05% (402 si es insuficiente). |
+| POST | `/membership/deduct` | Deducción interna de la tarifa v5 (402 si es insuficiente). |
+| GET | `/membership/tariffs` | Tabla pública de tarifas escalonadas v5 (sin autenticación). |
 
 ### 7.7 Módulo 6 — Auditoría y conciliación (`/compliance`, Regla 58a)
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/compliance/audit-logs` | Consulta de bitácoras (filtrable por categoría). |
-| GET | `/compliance/audit-logs/verify` | Recalcula y verifica la cadena de hashes. |
+| GET | `/compliance/audit-logs` | Consulta de bitácoras (sólo super administrador). |
+| GET | `/compliance/audit-logs/verify` | Recalcula y verifica la cadena de hashes (sólo super administrador). |
 | GET | `/compliance/reconciliation` | Transacciones con vínculo al CEP de Banxico. |
 
 Además: `GET /api/health` para health checks.
+
+### 7.8 Super administración (`/admin`, desde septiembre 2026)
+
+Panel `/admin.html` con login por contraseña + 2FA TOTP (rol `superadmin`, token `scope=admin`).
+Gestiona usuarios, saldos y membresías, consulta movimientos y la bitácora completa; no puede
+operar a nombre de los usuarios. Detalle completo en `DOCUMENTACION-SISTEMA-COMPLETA.md` (§6.2, §8.2, §15).
 
 ### 7.8 Ejemplo — generación de cobro
 
@@ -277,11 +284,11 @@ variables de entorno; se recomienda migrar la llave AES a un HSM/KMS (p. ej. AWS
 ### 9.1 Características
 
 - **Multiusuario con login sin contraseña:** cada usuario elige tipo (Persona/Empresa) y un
-  **alias único que inicia con `$@`** (sugerible desde celular o alias de correo).
+  **alias único `$@` + celular de 10 dígitos** (el correo es sólo informativo).
 - **Seis módulos** navegables: Dashboard, Onboarding/KYC, Bóveda, Cobros CoDi, Pagar
   (lector de QR), Membresía y Bitácoras.
 - **Lógica real en el cliente:** validación CLABE módulo-10, niveles KYC con campos por
-  tipo, cálculo del 0.05%, bloqueo por saldo, y cadena de auditoría SHA-256 verificable.
+  tipo, cálculo de tarifas escalonadas, bloqueo por saldo, y cadena de auditoría SHA-256 verificable.
 - **Generación y lectura de QR:** el cobro produce un QR con el Mensaje de Cobro; el módulo
   Pagar lo lee por cámara, imagen, pegado o simulación.
 - **Persistencia:** el estado se guarda en `localStorage` (clave `superclabe_db_v2`) para
@@ -297,7 +304,7 @@ DB = { users:{ "$@alias": { alias, client_type, kyc_level, profile, membership, 
        session: "$@alias" }
 ```
 
-Los cobros guardan su `owner`; al pagar se deduce el 0.05% de la membresía del **beneficiario**
+Los cobros guardan su `owner`; al pagar se deduce la tarifa escalonada v5 de la membresía del **beneficiario**
 (no del pagador), y la bitácora registra el alias como operador.
 
 ### 9.3 Integración con la API
@@ -322,7 +329,7 @@ Beneficiario (comercio)                    Pagador
 6. Liquidación SPEI/CoDi (≤4s):
    - estado → PROCESSED
    - clave de rastreo generada
-   - deducción 0.05% al beneficiario
+   - deducción de tarifa v5 al beneficiario
    - registro en bitácora inmutable
 7. Comprobante con vínculo al CEP  ◀─────  (Banxico)
 ```
@@ -403,7 +410,7 @@ Electrónicos). Recomendado: snapshots EBS y `pg_dump` periódico a S3.
 | Mensajes de Cobro CoDi | Apéndice AD (Circular 12/2019) |
 | Vínculo al CEP | Apéndice E |
 | Conexión como PSPI / participante indirecto | Apéndice AN (Circular 14/2017) |
-| Exclusión IFPE / membresía 0.05% | Ley Fintech / LTOSF |
+| Exclusión IFPE / membresía tarifas v5 | Ley Fintech / LTOSF |
 | Certificación en Sandbox y auditoría externa | Apéndice O / Regla 74a |
 
 ---
@@ -420,7 +427,7 @@ Electrónicos). Recomendado: snapshots EBS y `pg_dump` periódico a S3.
 **Roadmap sugerido:**
 1. Cablear la SPA a la API real (login, cobros y pagos server-backed) para compartir datos
    entre dispositivos.
-2. Contraseña + 2FA obligatorio y gestión de roles (Oficial de Seguridad, auditor).
+2. Contraseña + 2FA obligatorio para usuarios y roles adicionales (Oficial de Seguridad, auditor). El rol de super administrador con contraseña + 2FA ya está implementado.
 3. Migrar la llave AES a AWS KMS/HSM y rotación de llaves.
 4. HTTPS con certificado gestionado y dominio; WAF.
 5. Integración real con el participante patrocinador y certificación en el Sandbox de

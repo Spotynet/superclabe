@@ -5,7 +5,8 @@ Implementa una **capa de software no-custodia** para cobros y pagos sobre los ri
 Banco de México (SPEI, CoDi y Dimo), bajo el modelo de **Proveedor de Servicios de
 Participación Indirecta (PSPI)**: el dinero viaja directo cuenta-a-cuenta entre usuarios y
 la plataforma **nunca capta ni custodia fondos** (evita la clasificación como IFPE y el
-capital mínimo de 5M UDIS). La única deducción es el **0.05%** de una membresía de software.
+capital mínimo de 5M UDIS). La única deducción es la **tarifa escalonada v5** de una membresía de software
+(1.00% de $100 a $999.99, 0.83% de $1,000 a $9,999.99 y 0.50% desde $10,000, + I.V.A. 16%).
 
 ## Los 6 módulos
 
@@ -15,8 +16,10 @@ capital mínimo de 5M UDIS). La única deducción es el **0.05%** de una membres
 | 2 | Bóveda bancaria | Resguardo cifrado AES-256 de la CLABE, RFC, etc. | Regla 58a |
 | 3 | Cobros CoDi | Generador de **códigos QR** y Mensajes de Cobro | Apéndice AD |
 | 4 | Pagos y 2FA | **Lector de QR** (cámara/imagen), enmascaramiento Dimo | Regla 71a |
-| 5 | Membresía prepago | Deducción del 0.05% y bloqueo por saldo | Exclusión IFPE / LTOSF |
-| 6 | Bitácoras y auditoría | Registro inmutable con hash encadenado | Regla 58a |
+| 5 | Membresía prepago | Deducción de tarifa escalonada v5 y bloqueo por saldo | Exclusión IFPE / LTOSF |
+| 6 | Bitácoras y auditoría | Registro inmutable con hash encadenado, visible sólo para el super administrador | Regla 58a |
+
+Además hay un **panel de super administración** (`/admin.html`, ver más abajo) separado de la app de usuarios.
 
 ## Estructura
 
@@ -33,7 +36,9 @@ webapp-spei-codi/
 │   ├── DEPLOY-AWS-EC2.md       # Guía de despliegue en EC2 (paso a paso)
 │   └── ec2-user-data.sh        # Bootstrap: instala Docker en la instancia
 ├── frontend/
-│   ├── index.html              # SPA (6 módulos, multiusuario, QR, persistencia)
+│   ├── index.html              # Landing
+│   ├── app.html                # SPA de usuarios (multiusuario, QR, persistencia)
+│   ├── admin.html              # Panel de super administración
 │   └── config.js               # API_BASE / modo API
 └── backend/
     ├── Dockerfile              # Imagen de desarrollo (uvicorn)
@@ -41,6 +46,8 @@ webapp-spei-codi/
     ├── gunicorn_conf.py        # Workers Uvicorn, timeouts, logs
     ├── requirements.txt
     ├── init.sql                # Esquema PostgreSQL completo (users con alias $@)
+    ├── migrate.py              # Migraciones idempotentes (python migrate.py [--check])
+    ├── create_superadmin.py    # Alta / reinicio del super administrador
     └── app/
         ├── main.py             # FastAPI + routers + frontend estático
         ├── config.py           # Variables de entorno / reglas de negocio
@@ -50,7 +57,7 @@ webapp-spei-codi/
         ├── crypto.py           # AES-256, máscara CLABE, mod-10, hash-chain, PBKDF2
         ├── security.py         # JWT de sesión + 2FA TOTP
         ├── audit.py            # Escritura de bitácora encadenada
-        └── routers/            # auth, kyc, vault, billing, checkout, membership, compliance
+        └── routers/            # auth, kyc, vault, billing, checkout, membership, compliance, admin
 ```
 
 ## Versión del sistema
@@ -79,15 +86,14 @@ Se muestra en el footer del menú izquierdo (`app.html`) y en el “Powered by S
 
 ### Opción A — Sólo el frontend (inmediato, sin servidor)
 Abre `frontend/index.html` en el navegador. Es una demo totalmente funcional con
-lógica real en el cliente (validación CLABE módulo-10, niveles KYC, cálculo del 0.05%,
+lógica real en el cliente (validación CLABE módulo-10, niveles KYC, cálculo de tarifas escalonadas,
 bloqueo por saldo, cadena de auditoría SHA-256 verificable).
 
 Incluye **sistema multiusuario con login** (sin contraseña por ahora): cada usuario
-elige tipo de registro (Persona física o Empresa) y define un **alias único** que
-siempre inicia con `$@` (puede ser su celular, p. ej. `$@5512345678`, o el alias de su
-correo, p. ej. `$@juan.perez`). Cada usuario tiene su propio expediente KYC, bóveda,
-cobros y saldo de membresía; los datos se conservan en el navegador para pruebas y hay
-un usuario demo (`$@empresa.demo`) precargado.
+elige tipo de registro (Persona física o Empresa) y su **alias es su celular** con el
+prefijo `$@` (p. ej. `$@5512345678`), único en el sistema; el correo es sólo informativo.
+Cada usuario tiene su propio expediente KYC, bóveda, cobros y saldo de membresía, y sólo
+ve sus propios datos y movimientos.
 
 ### Opción B — Fullstack con Docker (API + PostgreSQL + Redis)
 ```bash
@@ -122,16 +128,36 @@ Arranque automático de la instancia: **`deploy/ec2-user-data.sh`**.
 
 ## Flujo de prueba de la API (verificado)
 
-1. `POST /api/v1/auth/register` — crea usuario por **alias `$@...`** y tipo (Persona/Empresa), sin contraseña (KYC 1).
-2. `POST /api/v1/auth/login` — inicia sesión por **alias** (sin contraseña); devuelve el JWT y el `totp_secret` (2FA) la primera vez. `GET /api/v1/auth/users` lista los alias.
+1. `POST /api/v1/auth/register` — crea usuario con su **celular** (alias `$@<celular>`) y tipo (Persona/Empresa), sin contraseña (KYC 1).
+2. `POST /api/v1/auth/login` — inicia sesión por **alias** (sin contraseña); devuelve el JWT y el `totp_secret` (2FA) la primera vez. `GET /api/v1/auth/users` lista los alias activos.
 3. `POST /api/v1/kyc/upgrade` — sube a Nivel 2/3/4 según documentos (Regla 72a).
 4. `POST /api/v1/vault/accounts` — registra CLABE (validación módulo-10, cifrado AES-256).
 5. `POST /api/v1/membership/recharge` — recarga el saldo prepago.
 6. `POST /api/v1/billing/charges` — genera el cobro y su `qr_payload` (Mensaje de Cobro CoDi en QR).
 7. `POST /api/v1/checkout/scan` — decodifica el contenido del QR escaneado y devuelve el checkout.
 8. `GET  /api/v1/checkout/{folio}` — vista del pagador (beneficiario enmascarado + CEP).
-9. `POST /api/v1/checkout/{folio}/pay` — liquida, genera clave de rastreo y deduce el 0.05%.
-9. `GET  /api/v1/compliance/audit-logs/verify` — confirma la integridad de la bitácora.
+9. `POST /api/v1/checkout/{folio}/pay` — liquida, genera clave de rastreo y deduce la tarifa escalonada v5.
+10. `GET  /api/v1/admin/audit-logs/verify` — (sólo super admin) confirma la integridad de la bitácora.
+
+## Super administrador
+
+Panel en **`/admin.html`**, API bajo `/api/v1/admin/*`. Ingresa con alias + contraseña + código
+2FA (TOTP) y su sesión dura 30 min. Puede activar/desactivar usuarios, ajustar saldos y
+estatus de membresía, ver perfiles de soporte, movimientos, cobros, la bitácora completa del
+sistema y verificar su integridad. **No** puede crear cobros, pagar, recargar ni operar a
+nombre de ningún usuario, ni ver datos cifrados (CURP, CLABE completa, documentos). Cada
+acción queda en bitácora con su motivo.
+
+```bash
+cd backend
+python migrate.py              # agrega users.role (migración 005) si falta
+python create_superadmin.py    # crea $@superadmin; imprime contraseña y secreto 2FA una sola vez
+python create_superadmin.py --reset   # nueva contraseña + nuevo 2FA
+```
+
+Los usuarios no tienen acceso al panel ni a la bitácora: sus tokens (`scope=user`) son
+rechazados en `/admin/*` y `/compliance/audit-logs`, y el token del admin (`scope=admin`) es
+rechazado en todos los endpoints operativos.
 
 ## Notas de cumplimiento implementadas
 
@@ -139,7 +165,7 @@ Arranque automático de la instancia: **`deploy/ec2-user-data.sh`**.
 - **AES-256 en reposo** para CLABE, RFC, CURP, nombre (Regla 58a).
 - **Enmascaramiento** de CLABE y beneficiario en pantalla (Regla 71a / Dimo).
 - **2FA** (contraseña ≥8 + TOTP) y expiración de sesión a 20 min (Circular 9/2026).
-- **0.05% al emisor**, nunca al receptor CoDi; bloqueo lógico al agotarse el saldo (LTOSF).
+- **Tarifa escalonada v5** a la membresía de quien recibe el dinero (nunca a quien paga); bloqueo lógico al agotarse el saldo (LTOSF).
 - **Bitácora inmutable** con hash SHA-256 encadenado y política de retención 6 meses / 1 año.
 - **Máx. 3 recordatorios** de cobro por WhatsApp.
 

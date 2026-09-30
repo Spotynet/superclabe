@@ -2,17 +2,34 @@
 
 # SC-DEV-SIG-v1: WboTbzJE0cNPg4haaTu1wmTVzQUln3wsdQPQ3id_flt-kuNdYOk6VIJOPkyyxwCgJ8-0aj6y3gl87gS-V_HI4pI3F33NvfJlKH44OXfurF7Os8iRWf6q9UgpDGBZN7edVQZbWLY8_Q==
 # (firma de autoría cifrada AES-256-GCM — verificar con tools/verify_dev_signature.py)
+import json
+import re
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from ..audit import write_audit
 from ..notify import notify
 from ..config import settings
-from ..crypto import encrypt_aes
+from ..crypto import decrypt_aes, encrypt_aes
 from ..database import get_db
-from ..models import CompanyMetadata, IndividualMetadata, User
-from ..schemas import KycUpgradeIn
+from ..models import CompanyMetadata, IndividualMetadata, KycDossier, User
+from ..schemas import KycFileIn, KycUpgradeIn
 from ..security import get_current_user
+
+# Adjuntos que sí se guardan en el expediente. La contraseña de la e.firma no.
+_FILE_IDS = {"kFront", "kBack", "kSelfie", "kProof", "kActa", "kCsf", "kCer", "kKey"}
+_DATA_URL = re.compile(r"^data:([a-z0-9][a-z0-9.+-]*/[a-z0-9][a-z0-9.+-]*);base64,[a-z0-9+/=\s]+$", re.I)
+_MIME_OK = {
+    "image/jpeg", "image/png", "image/webp", "image/gif",
+    "application/pdf", "application/octet-stream",
+    "application/pkix-cert", "application/x-x509-ca-cert",
+}
+_TEXT_FIELDS = (
+    "curp", "rfc", "full_name", "business_name", "representative_name",
+    "birth_date", "gender", "address", "id_doc_type",
+)
 
 router = APIRouter(prefix="/api/v1/kyc", tags=["1. Perfil Financiero (Regla 72a)"])
 
@@ -23,6 +40,60 @@ def _required(client_type: str, level: int):
     if level == 2:
         return ["curp"] if client_type == "individual" else ["rfc"]
     return []
+
+
+def _check_file(f: KycFileIn) -> dict:
+    if f.id not in _FILE_IDS:
+        raise HTTPException(422, "Tipo de adjunto no permitido")
+    match = _DATA_URL.match(f.data.strip())
+    if not match:
+        raise HTTPException(422, f"El archivo {f.label} no es un adjunto válido")
+    mime = match.group(1).lower()
+    if mime not in _MIME_OK:
+        raise HTTPException(422, f"Formato no permitido en {f.label}")
+    name = f.name.replace("\\", "/").split("/")[-1].strip() or "adjunto"
+    return {"id": f.id, "label": f.label.strip(), "name": name[:180], "mime": mime, "data": f.data.strip()}
+
+
+def merge_dossier(prev: dict | None, fields: dict, files: list) -> dict:
+    """Conserva lo ya capturado y sustituye solo los campos y archivos nuevos."""
+    base = prev if isinstance(prev, dict) else {}
+    stored = dict(base.get("fields") or {})
+    for key, value in fields.items():
+        if value:
+            stored[key] = value
+    by_id = {item["id"]: item for item in (base.get("files") or []) if item.get("id") in _FILE_IDS}
+    for item in files:
+        by_id[item["id"]] = item
+    return {"fields": stored, "files": list(by_id.values())}
+
+
+def _load_dossier(db: Session, user_id) -> tuple[KycDossier | None, dict]:
+    row = db.query(KycDossier).filter(KycDossier.user_id == user_id).first()
+    if not row:
+        return None, {}
+    try:
+        data = json.loads(decrypt_aes(row.payload_encrypted) or "{}")
+    except Exception:
+        data = {}
+    return row, data if isinstance(data, dict) else {}
+
+
+def _save_dossier(db: Session, user: User, body: KycUpgradeIn) -> None:
+    fields = {}
+    for key in _TEXT_FIELDS:
+        value = getattr(body, key, None)
+        if isinstance(value, str) and value.strip():
+            fields[key] = value.strip()
+    files = [_check_file(f) for f in (body.files or [])]
+    row, prev = _load_dossier(db, user.id)
+    payload = json.dumps(merge_dossier(prev, fields, files), ensure_ascii=False)
+    blob = encrypt_aes(payload)
+    if row:
+        row.payload_encrypted = blob
+        row.updated_at = datetime.utcnow()
+    else:
+        db.add(KycDossier(user_id=user.id, payload_encrypted=blob))
 
 
 @router.get("/limits")
@@ -76,6 +147,7 @@ def upgrade(body: KycUpgradeIn, request: Request,
             user.representative_name = body.representative_name
 
     user.kyc_level = body.target_level
+    _save_dossier(db, user, body)
     notify(db, user.id, origin="kyc", kind="KYC_UPGRADE",
            title="Perfil Financiero actualizado",
            body=f"Tu Perfil Financiero pasó a Nivel {body.target_level}.",

@@ -297,16 +297,37 @@
   .price .sec-kicker{color:var(--mint)}
   .price .sec-title{color:#fff}
   .price .sec-sub{color:rgba(255,255,255,.86)}
-  .price-line{
-    display:flex;flex-wrap:wrap;align-items:baseline;gap:12px 20px;
-    margin-top:28px;padding-top:24px;border-top:1px solid rgba(255,255,255,.18);
+  .tiers{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+    margin-top:36px;
   }
-  .price-big{
-    font-family:var(--font-display);font-size:clamp(2.5rem,5.5vw,3.7rem);
-    font-weight:700;letter-spacing:-.02em;line-height:1;
+  .tier{
+    position:relative;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    border-radius:20px;padding:26px 22px;
   }
-  .price-big span{font-size:.42em;opacity:.85;margin-left:8px;font-family:var(--font-body);font-weight:600}
-  .price-note{max-width:42ch;color:rgba(255,255,255,.88);font-size:1.05rem;line-height:1.6}
+  .tier-featured{background:#fff;color:var(--deep);border-color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.18)}
+  .tier-badge{
+    position:absolute;top:-12px;left:22px;
+    background:var(--mint);color:var(--deep);
+    font-size:12px;font-weight:700;letter-spacing:.04em;
+    padding:4px 12px;border-radius:999px;
+  }
+  .tier-range{font-size:14px;font-weight:700;letter-spacing:.02em;opacity:.85}
+  .tier-rate{
+    font-family:var(--font-display);font-size:clamp(2.3rem,4.5vw,3rem);
+    font-weight:700;letter-spacing:-.02em;line-height:1.05;margin:8px 0 14px;
+  }
+  .tier-rate span{font-size:.4em;opacity:.8;margin-left:6px;font-family:var(--font-body);font-weight:600}
+  .tier h3{margin:0 0 6px;font-size:1.15rem;color:inherit}
+  .tier p{color:rgba(255,255,255,.86);font-size:.98rem;line-height:1.55}
+  .tier-featured p{color:var(--muted)}
+  .price-explain{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+    margin-top:36px;padding-top:28px;border-top:1px solid rgba(255,255,255,.18);
+  }
+  .price-explain h3{margin:0 0 6px;font-size:1.08rem;color:#fff}
+  .price-explain p{color:rgba(255,255,255,.86);font-size:.98rem;line-height:1.55}
 
   /* Final CTA */
   .final{
@@ -354,6 +375,7 @@
     .hero-copy{max-width:none}
     .steps{grid-template-columns:1fr 1fr;gap:28px 24px}
     .service{grid-template-columns:72px 1fr;gap:16px}
+    .tiers,.price-explain{grid-template-columns:1fr;gap:22px}
     .nav-links a:not(.btn){display:none}
   }
 
@@ -388,8 +410,7 @@
     .steps{grid-template-columns:1fr;gap:22px}
     .step::before{font-size:2.2rem}
     .benefit-list{grid-template-columns:1fr;gap:0}
-    .price-line{flex-direction:column;align-items:flex-start}
-    .price-note{max-width:none}
+    .tier{padding:22px 18px}
     .final{padding:72px 0 max(72px,calc(48px + env(safe-area-inset-bottom)));text-align:left}
     .final .sec-title{max-width:none;margin-left:0;margin-right:0}
     .final .sec-sub{margin-left:0;margin-right:0}
@@ -418,6 +439,7 @@
         <a href="#servicios">Servicios</a>
         <a href="#como-usar">Cómo usar</a>
         <a href="#beneficios">Beneficios</a>
+        <a href="#costo">Tarifas</a>
         <a class="btn btn-primary" href="/app.html">Iniciar sesión / Registro</a>
       </div>
     </div>
@@ -540,7 +562,7 @@
             <div class="service-index">05</div>
             <div>
               <h3>Membresía prepago</h3>
-              <p>Operas con un saldo de crédito de software. Se descuenta una tarifa muy baja por operación recibida (0.05% + I.V.A.). Si se agota, recargas y sigues.</p>
+              <p>Operas con un saldo de crédito de software. Se descuenta una tarifa escalonada por operación recibida: 1.00%, 0.83% o 0.50% + I.V.A. según el monto. Si se agota, recargas y sigues.</p>
             </div>
           </article>
           <article class="service">
@@ -654,13 +676,46 @@
 
     <!-- COSTO -->
     <section class="price" id="costo">
-      <div class="wrap-narrow">
-        <div class="sec-kicker">Costo transparente</div>
-        <h2 class="sec-title">Una tarifa pequeña por usar el software</h2>
-        <p class="sec-sub">No cobramos comisión interbancaria al estilo banco. Usas una membresía prepago de software.</p>
-        <div class="price-line">
-          <div class="price-big">0.05%<span>+ I.V.A.</span></div>
-          <p class="price-note">Se descuenta del saldo de membresía de quien recibe el pago o el envío. Quien envía o paga no paga esa tarifa.</p>
+      <div class="wrap">
+        <div class="sec-kicker">Costo transparente · Tarifas escalonadas</div>
+        <h2 class="sec-title">Entre más grande tu cobro, menor tu tarifa</h2>
+        <p class="sec-sub">Sin comisiones de tarjeta de 1.5% a 3.5% ni esperar 24–48 horas: el dinero llega cuenta a cuenta en segundos. Tú solo pagas una tarifa de software según el monto de cada operación.</p>
+
+        <div class="tiers">
+          <article class="tier">
+            <div class="tier-range">$100.00 a $999.99</div>
+            <div class="tier-rate">1.00%<span>+ I.V.A.</span></div>
+            <h3>Micro-comercio</h3>
+            <p>Comercio informal, taxis y tienditas. Un cobro de $500 cuesta $5.00 + I.V.A.</p>
+          </article>
+          <article class="tier tier-featured">
+            <div class="tier-badge">Mejor balance</div>
+            <div class="tier-range">$1,000.00 a $9,999.99</div>
+            <div class="tier-rate">0.83%<span>+ I.V.A.</span></div>
+            <h3>Comercio medio</h3>
+            <p>Restaurantes, proveedores y B2B. Un cobro de $2,500 cuesta $20.75 + I.V.A.</p>
+          </article>
+          <article class="tier">
+            <div class="tier-range">Desde $10,000.00</div>
+            <div class="tier-rate">0.50%<span>+ I.V.A.</span></div>
+            <h3>Corporativo y API</h3>
+            <p>Empresas medianas e integraciones API. Un cobro de $15,000 cuesta $75.00 + I.V.A.</p>
+          </article>
+        </div>
+
+        <div class="price-explain">
+          <div>
+            <h3>¿Cómo se aplica?</h3>
+            <p>La tasa se elige según el monto de <b>cada</b> operación y se aplica sobre el monto completo. Por ejemplo, un cobro de $1,200 paga 0.83% sobre los $1,200.</p>
+          </div>
+          <div>
+            <h3>¿Quién la paga?</h3>
+            <p>Solo quien recibe el dinero, desde su membresía prepago. Quien paga o envía no paga comisión. El I.V.A. es del 16% sobre la tarifa.</p>
+          </div>
+          <div>
+            <h3>¿Por qué escalonada?</h3>
+            <p>Cada cobro por WhatsApp tiene un costo fijo de operación. La tarifa de tickets chicos lo cubre, y los tickets grandes obtienen la tasa más baja.</p>
+          </div>
         </div>
       </div>
     </section>

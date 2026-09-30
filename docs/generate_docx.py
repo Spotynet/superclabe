@@ -328,7 +328,7 @@ def setup_header_footer(doc, logo_path: Path):
     ffp = ffooter.paragraphs[0]
     ffp.clear()
     ffp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    rr = ffp.add_run("Súper CLABE · Agosto 2026 · v2.0")
+    rr = ffp.add_run("Súper CLABE · Septiembre 2026 · v2.2")
     set_run_font(rr, 9, False, MUTED)
 
 
@@ -356,8 +356,8 @@ def build_cover(doc, logo_path: Path):
     meta = [
         ("Producto", "Súper CLABE"),
         ("Modelo", "PSPI · capa no-custodia · sin captación"),
-        ("Versión del documento", "2.0"),
-        ("Fecha", "Agosto 2026"),
+        ("Versión del documento", "2.2"),
+        ("Fecha", "Septiembre 2026"),
         ("Clasificación", "Confidencial — uso interno"),
         ("Código fuente", "webapp-spei-codi/"),
     ]
@@ -448,7 +448,7 @@ def build_body(doc):
     )
     add_p(
         doc,
-        "La monetización es una membresía prepago de software: se debita 0.05% + I.V.A. 16% "
+        "La monetización es una membresía prepago de software: se debita la tarifa escalonada v5 (1.00% / 0.83% / 0.50%) + I.V.A. 16% "
         "del saldo de membresía del receptor al liquidar una operación. No hay wallet de fondos "
         "de clientes ni captación (evita clasificación como IFPE).",
     )
@@ -457,7 +457,7 @@ def build_body(doc):
         doc,
         ["Capacidad", "Descripción"],
         [
-            ["Registro / login por alias $@…", "Identidad única en la plataforma"],
+            ["Registro / login por alias $@<celular>", "El celular de 10 dígitos es la identidad única; el correo es informativo"],
             ["Perfil Financiero (KYC 1–4)", "Topes mensuales de abonos recibidos"],
             ["Mis cuentas (bóveda)", "CLABE destino cifrada AES-256"],
             ["Cobrar (CoDi)", "QR / folio con monto fijo o libre, abierto o dirigido"],
@@ -480,7 +480,7 @@ def build_body(doc):
             ["Figura", "PSPI / iniciador de pagos, patrocinado por participante SPEI directo"],
             ["Marco", "Circular 14/2017, Circular 12/2019, Ley Fintech, LTOSF, Circular 9/2026"],
             ["Custodia", "Sin captación: no depósitos, no wallets de cliente, no crédito"],
-            ["Monetización", "Membresía prepago; tarifa software 0.05% + IVA"],
+            ["Monetización", "Membresía prepago; tarifa software escalonada v5 + IVA"],
             ["Bloqueo", "Membresía blocked → no opera hasta recargar"],
         ],
         [4, 12.5],
@@ -528,7 +528,7 @@ def build_body(doc):
             "Súper CLABE genera el Mensaje de Cobro CoDi (folio + QR).",
             "El pagador abre el checkout en la app (inbox, QR o folio).",
             "Al confirmar, la app NO debita un saldo propio: solicita al riel Banxico/banco patrocinador la transferencia cuenta→cuenta.",
-            "La liquidación ocurre entre bancos; la app registra resultado, CEP y debita la membresía 0.05% + IVA del receptor.",
+            "La liquidación ocurre entre bancos; la app registra resultado, CEP y debita la membresía (tarifa v5 + IVA) del receptor.",
         ],
     )
     add_heading(doc, "3.2 Rol de Mis cuentas", 2)
@@ -621,7 +621,7 @@ def build_body(doc):
         doc,
         ["Constante", "Valor"],
         [
-            ["MEMBERSHIP_FEE_RATE", "0.0005 (0.05%)"],
+            ["FEE_TIERS (v5)", "$0–$999.99: 1.00% · $1,000–$9,999.99: 0.83% · ≥$10,000: 0.50%"],
             ["IVA_RATE", "0.16 (16%)"],
             ["MAX_WHATSAPP_REMINDERS", "3"],
             ["SESSION / JWT", "20 minutos"],
@@ -648,7 +648,7 @@ def build_body(doc):
             ["5", "Cobrar", "/billing/charges", "Mensaje de Cobro + QR", "Apéndice AD"],
             ["6", "Pagar", "/checkout", "Inbox, QR, directo", "Regla 71a"],
             ["7", "Membresía", "/membership", "Saldo prepago y recarga", "No IFPE"],
-            ["8", "Bitácoras", "/compliance", "Auditoría hash", "Regla 58a"],
+            ["—", "Super administración (admin.html)", "/admin", "Usuarios, membresías, movimientos, bitácora", "Regla 58a"],
         ],
         [1.2, 3, 3.5, 4.5, 3],
     )
@@ -656,9 +656,17 @@ def build_body(doc):
     add_heading(doc, "6.1 Detalle operativo por módulo", 2)
     modules_detail = [
         (
+            "Registro e ingreso",
+            "El alias se genera siempre como $@ + celular de 10 dígitos (p. ej. $@5512345678); "
+            "alias y celular son únicos (409 ALIAS_EXISTS si ya existe, sin alias sugeridos). "
+            "El correo es opcional e informativo: puede repetirse y no sirve para ingresar, "
+            "buscar ni identificar. Login escribiendo el celular.",
+        ),
+        (
             "Inicio",
             "Resumen de volumen cobrado/enviado; tarjeta de membresía (saldo MXN, % usado, "
-            "volumen estimado); listado filtrable de transacciones; accesos rápidos.",
+            "volumen estimado); listado filtrable de transacciones propias (sólo donde el usuario "
+            "es emisor o receptor); accesos rápidos.",
         ),
         (
             "Mi perfil",
@@ -672,7 +680,7 @@ def build_body(doc):
         ),
         (
             "Favoritos",
-            "Búsqueda de usuarios; alta/baja; atajos a cobro dirigido y pago directo.",
+            "Búsqueda de usuarios por alias (celular) o nombre, sin correo; alta/baja; atajos a cobro dirigido y pago directo.",
         ),
         (
             "Cobrar",
@@ -689,8 +697,15 @@ def build_body(doc):
             "Saldo y estatus active/blocked; recarga simulada; simulador tarifa + IVA.",
         ),
         (
-            "Bitácoras",
-            "Tabla de eventos y verificación de integridad de la cadena hash.",
+            "Super administración (/admin.html)",
+            "Acceso con alias + contraseña + código 2FA (TOTP); sesión de 30 min y bloqueo tras 5 "
+            "intentos fallidos en 15 min. Resumen del sistema; búsqueda de usuarios y perfil de "
+            "soporte (contacto, nivel KYC, documentos existentes, cuentas enmascaradas); movimientos, "
+            "cobros y bitácora de cada usuario; activar/desactivar usuarios, ajustar saldo y estatus "
+            "de membresía (siempre con motivo, registrado en bitácora); transacciones del sistema y "
+            "bitácora completa con verificación de la cadena. No puede crear cobros, pagar, recargar "
+            "ni operar a nombre de usuarios, ni ver datos cifrados. Los usuarios no tienen acceso "
+            "al panel ni a la bitácora.",
         ),
     ]
     for title, body in modules_detail:
@@ -701,7 +716,7 @@ def build_body(doc):
     add_heading(doc, "7. Modelo de datos", 1)
     add_p(
         doc,
-        "El modelo relacional centra la identidad en users (alias $@). La bóveda guarda CLABEs "
+        "El modelo relacional centra la identidad en users (alias $@ + celular, único; correo informativo no único). La bóveda guarda CLABEs "
         "destino; charges referencia destination_account_id; transactions registran liquidaciones "
         "(charge_id nulo = pago directo). favorites, notifications, audit_logs y memberships "
         "completan el dominio.",
@@ -710,7 +725,7 @@ def build_body(doc):
         doc,
         ["Tabla", "Propósito"],
         [
-            ["users", "Identidad $@alias, email/tel, KYC, TOTP"],
+            ["users", "Identidad $@<celular> (alias y celular únicos), correo informativo, KYC, TOTP, is_active, role (user/superadmin)"],
             ["companies_metadata / individuals_metadata", "Identidad cifrada + documentos"],
             ["vault_accounts", "CLABE destino cifrada / máscara / hash"],
             ["memberships", "Saldo prepago y estatus"],
@@ -731,11 +746,11 @@ def build_body(doc):
         doc,
         ["Método", "Ruta", "Descripción"],
         [
-            ["POST", "/auth/register", "Alta usuario + membresía 0 + KYC 1"],
-            ["POST", "/auth/login", "Login por alias; TOTP opcional → JWT"],
+            ["POST", "/auth/register", "Alta con celular (alias $@<celular>), tipo y correo opcional; 409 si el celular existe; membresía 0 + KYC 1"],
+            ["POST", "/auth/login", "Login por alias de celular; TOTP opcional → JWT (scope user); 403 USER_INACTIVE si está desactivado"],
             ["GET", "/auth/me", "Perfil + uso mensual KYC"],
-            ["GET", "/auth/lookup", "Lookup público para UX login"],
-            ["GET", "/auth/users", "Directorio (favoritos / dirigidos)"],
+            ["GET", "/auth/lookup", "Lookup público para UX login (sólo usuarios operativos)"],
+            ["GET", "/auth/users", "Directorio mínimo: alias, tipo, nombre, nivel KYC"],
         ],
         [2.5, 4.5, 9.5],
     )
@@ -779,10 +794,35 @@ def build_body(doc):
             ["GET", "/notifications/unread-count", "Contador"],
             ["POST", "/notifications/{id}/read", "Marcar leída"],
             ["POST", "/notifications/read-all", "Marcar todas"],
-            ["GET", "/compliance/audit-logs", "Bitácora"],
-            ["GET", "/compliance/audit-logs/verify", "Verifica cadena"],
-            ["GET", "/compliance/transactions", "Tx + CEP"],
+            ["GET", "/compliance/audit-logs", "Bitácora (sólo super admin)"],
+            ["GET", "/compliance/audit-logs/verify", "Verifica cadena (sólo super admin)"],
+            ["GET", "/compliance/transactions", "Tx propias + CEP"],
             ["GET", "/compliance/reconciliation", "Conciliación receptor"],
+        ],
+        [2.5, 6.5, 7.5],
+    )
+    add_heading(doc, "8.5 Super administración", 2)
+    add_p(
+        doc,
+        "Requieren token con scope admin y rol superadmin (salvo el login). Las acciones exigen "
+        "motivo y se registran en bitácora con categoría admin y severidad WARNING.",
+        size=10,
+    )
+    add_table(
+        doc,
+        ["Método", "Ruta", "Descripción"],
+        [
+            ["POST", "/admin/login", "Alias + contraseña + código TOTP → JWT admin (30 min)"],
+            ["GET/POST", "/admin/me · /admin/me/password", "Perfil · cambio de contraseña"],
+            ["GET", "/admin/overview", "Métricas globales"],
+            ["GET", "/admin/users", "Listado / búsqueda (q, status, paginación)"],
+            ["GET", "/admin/users/{id}", "Perfil de soporte sin datos descifrados"],
+            ["GET", "/admin/users/{id}/transactions · /charges · /audit", "Movimientos, cobros y bitácora del usuario"],
+            ["POST", "/admin/users/{id}/status", "Activar / desactivar con motivo"],
+            ["POST", "/admin/users/{id}/membership/adjust", "Abono o cargo al saldo con motivo"],
+            ["POST", "/admin/users/{id}/membership/status", "active / suspended / blocked con motivo"],
+            ["GET", "/admin/transactions", "Transacciones del sistema"],
+            ["GET", "/admin/audit-logs · /admin/audit-logs/verify", "Bitácora global y verificación"],
         ],
         [2.5, 6.5, 7.5],
     )
@@ -795,7 +835,7 @@ def build_body(doc):
         "Onboarding",
         [
             "Abrir /app.html",
-            "Registro (tipo PF/PM + alias $@ + email/tel) o login por alias",
+            "Registro (tipo PF/PM + celular → alias $@celular, correo opcional) o login con celular",
             "Obtener JWT (20 min)",
             "Completar Perfil Financiero → nivel ≥ 2",
             "Agregar CLABE en Mis cuentas",
@@ -861,13 +901,31 @@ def build_body(doc):
 
     # 10
     add_heading(doc, "10. Tarifas, membresía e IVA", 1)
+    add_p(doc, "Modelo de negocio: tarifas escalonadas (v5)", bold=True, align=WD_ALIGN_PARAGRAPH.LEFT)
+    add_p(
+        doc,
+        "Diseñado para proteger el margen frente al costo fijo de Meta por ventana de conversación "
+        "de 24 h (~$0.20 MXN) + AWS (~$0.05 MXN). La tasa se determina por el monto de cada operación "
+        "y se aplica sobre el monto completo (no es marginal). Montos menores a $100 usan 1.00%.",
+    )
+    add_table(
+        doc,
+        ["Rango", "Tasa", "Margen", "Segmento"],
+        [
+            ["$100.00 a $999.99", "1.00%", "75.0%", "Micro-comercio informal, taxis, tienditas"],
+            ["$1,000.00 a $9,999.99", "0.83%", "98.0%", "Comercio medio B2B, restaurantes, proveedores"],
+            ["Desde $10,000.00", "0.50%", "99.75%", "Corporativos medianos e integraciones API"],
+        ],
+        [4, 2, 2, 8.5],
+    )
     add_p(doc, "Fórmula (redondeo a 2 centavos):", bold=True, align=WD_ALIGN_PARAGRAPH.LEFT)
-    add_bullet(doc, "base_fee = monto × 0.0005")
+    add_bullet(doc, "base_fee = monto × tasa_del_rango(monto)")
     add_bullet(doc, "iva = base_fee × 0.16")
     add_bullet(doc, "total_fee = base_fee + iva")
     add_p(
         doc,
-        "Ejemplo: monto $10,000.00 MXN → base $5.00 + IVA $0.80 = $5.80 MXN debitados "
+        "Ejemplos: $500.00 → 1.00% → $5.00 + IVA $0.80 = $5.80; $2,500.00 → 0.83% → $20.75 + IVA $3.32 = $24.07; "
+        "$15,000.00 → 0.50% → $75.00 + IVA $12.00 = $87.00 MXN debitados "
         "de la membresía del receptor.",
     )
     add_heading(doc, "10.1 Quién paga el fee", 2)
@@ -884,7 +942,8 @@ def build_body(doc):
     add_heading(doc, "10.2 Volumen estimado en dashboard", 2)
     add_p(
         doc,
-        "Con saldo de membresía S: volumen_operaciones ≈ S / 0.00058. "
+        "Con saldo de membresía S: volumen mínimo ≈ S / 0.0116 (tickets a 1.00%) y máximo ≈ S / 0.0058 "
+        "(tickets desde $10,000 a 0.50%). El dashboard muestra el mínimo garantizado. "
         "Se muestra en MXN y nunca en negativo.",
     )
 
@@ -924,13 +983,20 @@ def build_body(doc):
             ["PIN de cobro", "PBKDF2-HMAC-SHA256 (200k iteraciones)"],
             ["Checkout", "Titular por iniciales; banco visible; sin CLABE completa"],
             ["Secretos", "AES_SECRET_KEY y JWT_SECRET por entorno"],
+            ["Roles", "users.role: user (opera) y superadmin (administra, no opera)"],
+            ["Alcance del token", "Claim scope user / admin; cada lado rechaza el token del otro (401)"],
+            ["Usuario desactivado", "Sesión cortada (403 USER_INACTIVE), sin ingreso, fuera del directorio y sin recibir cobros ni pagos"],
+            ["Super admin", "Contraseña PBKDF2 + 2FA TOTP obligatorio; sesión 30 min; bloqueo tras 5 fallos en 15 min"],
+            ["Privacidad", "Cada usuario sólo ve sus transacciones, cobros y notificaciones; bitácora exclusiva del super admin"],
         ],
         [4, 12.5],
     )
     add_note(
         doc,
-        "El login actual es por alias sin contraseña (modo demo/desarrollo). "
-        "En producción debe reforzarse con password y/o 2FA obligatorio.",
+        "El login de usuarios sigue siendo por alias sin contraseña (modo demo/desarrollo); en "
+        "producción debe reforzarse con password y/o 2FA obligatorio. El super administrador sí "
+        "exige contraseña y 2FA. Pendiente: POST /checkout/{folio}/pay no exige sesión y confía en "
+        "el payer_alias enviado.",
     )
 
     # 13
@@ -940,7 +1006,8 @@ def build_body(doc):
         ["Archivo", "Rol"],
         [
             ["frontend/index.html", "Landing marketing + demo"],
-            ["frontend/app.html", "Sistema completo (login + 8 módulos)"],
+            ["frontend/app.html", "Sistema de usuarios (login + 7 módulos, sin bitácoras)"],
+            ["frontend/admin.html", "Panel de super administración (contraseña + 2FA)"],
             ["frontend/config.js", 'API_BASE: "/api/v1", USE_API: true'],
         ],
         [5, 11.5],
@@ -978,13 +1045,23 @@ def build_body(doc):
     add_p(
         doc,
         "Cadena de integridad: hₙ = SHA256(hₙ₋₁ + timestamp|operator|action|category|ip|payload). "
-        "Verificación vía GET /compliance/audit-logs/verify. Retención declarada ≥ 6 meses (SPEI) "
-        "y 1 año (Canales Electrónicos).",
+        "Consulta y verificación sólo para el super administrador (GET /admin/audit-logs y "
+        "/admin/audit-logs/verify); los usuarios no tienen acceso a la bitácora. El timestamp se "
+        "normaliza a UTC sin zona antes del hash, para que la verificación coincida en PostgreSQL y "
+        "SQLite. Retención declarada ≥ 6 meses (SPEI) y 1 año (Canales Electrónicos).",
     )
     add_p(
         doc,
         "Cada transacción expone vínculo CEP Banxico. Categorías: auth, kyc_change, vault_access, "
-        "payment_initiation, membership, general.",
+        "payment_initiation, membership, admin, general. La categoría admin registra ingresos del "
+        "super administrador y cada acción suya con el motivo capturado.",
+    )
+    add_p(
+        doc,
+        "Alta del super administrador: python migrate.py y luego python create_superadmin.py "
+        "(alias $@superadmin por defecto; --alias, --name, --reset; SUPERADMIN_PASSWORD opcional). "
+        "Muestra una sola vez la contraseña, el secreto TOTP y la URI otpauth:// para la app "
+        "autenticadora.",
     )
 
     # 16
@@ -1006,6 +1083,8 @@ def build_body(doc):
         "AES_SECRET_KEY — cifrado bóveda / PII",
         "JWT_SECRET — firma de sesión",
         "JWT_EXPIRE_MIN — default 20",
+        "ADMIN_JWT_EXPIRE_MIN — sesión del super admin, default 30",
+        "SUPERADMIN_PASSWORD — opcional para create_superadmin.py",
         "POSTGRES_* / REDIS_URL — compose",
     ]:
         add_bullet(doc, v)
@@ -1022,17 +1101,23 @@ def build_body(doc):
 
     # 17
     add_heading(doc, "17. Datos demo y pruebas", 1)
+    add_p(
+        doc,
+        "La semilla de usuarios demo está desactivada por defecto: sólo corre si SEED_DEMO_USERS=1 y "
+        "la base no tiene usuarios. En desarrollo está en 0 y los demos anteriores ($@empresa.demo, "
+        "$@juan.perez, $@maria.lopez) fueron eliminados en septiembre 2026. Si se activa, crea:",
+    )
     add_table(
         doc,
         ["Alias", "Tipo", "KYC", "Membresía", "Notas"],
         [
-            ["$@empresa.demo", "Empresa", "2", "~$50", "CLABE BBVA demo"],
-            ["$@juan.perez", "PF", "2", "~$20", "—"],
-            ["$@maria.lopez", "PF", "1", "$0", "Sin operar hasta subir nivel"],
+            ["$@5510000001", "Empresa", "2", "~$50", "CLABE BBVA demo"],
+            ["$@5510000002", "PF", "2", "~$20", "—"],
+            ["$@5510000003", "PF", "1", "$0", "Sin operar hasta subir nivel"],
         ],
         [4, 2.5, 1.8, 2.5, 5.5],
     )
-    add_p(doc, "Login: solo alias. CLABE demo válida mod-10: 012180001234567895.", size=10)
+    add_p(doc, "Login: solo alias de celular. CLABE demo válida mod-10: 012180001234567895.", size=10)
 
     # 18
     add_heading(doc, "18. Estado actual vs producción Banxico", 1)
@@ -1098,12 +1183,13 @@ def build_body(doc):
     for item in [
         "Variables DATABASE_URL, AES_SECRET_KEY, JWT_SECRET definidas",
         "Migraciones aplicadas",
+        "Super administrador creado (create_superadmin.py) y 2FA registrado",
         "Health OK",
-        "Usuario demo o primer registro creado",
+        "Primer usuario registrado con su celular (o SEED_DEMO_USERS=1 en base vacía)",
         "Al menos una CLABE en bóveda",
         "Membresía con saldo > 0",
         "KYC ≥ 2 para operar",
-        "Probar: crear cobro → pagar → ver CEP/bitácora",
+        "Probar: crear cobro → pagar → ver CEP; revisar el evento en la bitácora del panel admin",
         "Verificar cadena de auditoría",
         "Backup de base de datos configurado",
     ]:
@@ -1123,9 +1209,32 @@ def build_body(doc):
         [6.5, 10],
     )
 
+    add_heading(doc, "Anexo C — Historial de cambios", 2)
+    add_table(
+        doc,
+        ["Versión", "Fecha", "Cambios"],
+        [
+            ["2.2", "Septiembre 2026",
+             "Super administrador: rol superadmin (migración 005_user_roles.sql), panel /admin.html y "
+             "API /admin/* con contraseña + 2FA. Gestiona usuarios (activar/desactivar), saldos y "
+             "estatus de membresía, perfiles de soporte, movimientos y bitácora completa; no opera a "
+             "nombre de usuarios ni ve datos cifrados. Script create_superadmin.py. Los usuarios ya no "
+             "ven la bitácora ni transacciones de terceros; directorio reducido. Usuarios desactivados "
+             "sin acceso ni operaciones. Corregida la verificación de la cadena de bitácora en PostgreSQL."],
+            ["2.1", "Septiembre 2026",
+             "Tarifas escalonadas v5 (1.00% / 0.83% / 0.50% + IVA) en lugar del 0.05% fijo; "
+             "GET /membership/tariffs; fee_rate y fee_model en respuestas y bitácora. "
+             "Alias = $@ + celular de 10 dígitos, único; sin alias personalizados ni sugeridos. "
+             "Correo opcional e informativo, no único (migración 004_email_informative.sql). "
+             "Usuarios demo eliminados de desarrollo; semilla con alias de celular y SEED_DEMO_USERS=0."],
+            ["2.0", "Agosto 2026", "Documentación técnica y operativa completa."],
+        ],
+        [1.8, 3.2, 11.5],
+    )
+
     add_p(
         doc,
-        "— Fin del documento — Súper CLABE v2.0 · Agosto 2026 —",
+        "— Fin del documento — Súper CLABE v2.2 · Septiembre 2026 —",
         size=10,
         bold=True,
         color=BRAND,

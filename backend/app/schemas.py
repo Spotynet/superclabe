@@ -10,15 +10,14 @@ from pydantic import BaseModel, EmailStr, Field
 
 # ---- Auth / Onboarding (por alias $@, sin contraseña por ahora) ----
 class RegisterIn(BaseModel):
-    # El alias siempre inicia con $@ (p. ej. $@5512345678 o $@juan.perez)
-    alias: str = Field(pattern=r"^\$@[A-Za-z0-9._-]{3,}$", max_length=60)
     client_type: str = Field(pattern="^(company|individual)$")
     # El nombre / razón social se captura después en el módulo Perfil Financiero
     display_name: Optional[str] = Field(default=None, max_length=150)
     representative_name: Optional[str] = Field(default=None, max_length=150)
-    # Correo y celular son llaves únicas del usuario (obligatorias al registrar)
-    email: EmailStr
-    phone_number: str = Field(pattern=r"^\d{10,15}$", min_length=10, max_length=15)
+    # El celular (10 dígitos) es la única llave: el alias se genera como $@<celular>
+    phone_number: str = Field(pattern=r"^\d{10}$")
+    # Correo sólo informativo: no identifica al usuario ni tiene que ser único
+    email: Optional[EmailStr] = None
 
 
 class UserOut(BaseModel):
@@ -51,17 +50,29 @@ class TokenOut(BaseModel):
 
 
 # ---- KYC ----
+class KycFileIn(BaseModel):
+    id: str = Field(min_length=1, max_length=40)
+    label: str = Field(min_length=1, max_length=160)
+    name: str = Field(min_length=1, max_length=180)
+    data: str = Field(min_length=16, max_length=2_800_000)
+
+
 class KycUpgradeIn(BaseModel):
     target_level: int = Field(ge=2, le=4)
-    curp: Optional[str] = None
-    rfc: Optional[str] = None
-    full_name: Optional[str] = None
-    business_name: Optional[str] = None
-    representative_name: Optional[str] = None
+    curp: Optional[str] = Field(default=None, max_length=18)
+    rfc: Optional[str] = Field(default=None, max_length=13)
+    full_name: Optional[str] = Field(default=None, max_length=150)
+    business_name: Optional[str] = Field(default=None, max_length=150)
+    representative_name: Optional[str] = Field(default=None, max_length=150)
+    birth_date: Optional[str] = Field(default=None, max_length=20)
+    gender: Optional[str] = Field(default=None, max_length=30)
+    address: Optional[str] = Field(default=None, max_length=300)
+    id_doc_type: Optional[str] = Field(default=None, max_length=40)
     id_front_path: Optional[str] = None
     id_back_path: Optional[str] = None
     selfie_liveness_path: Optional[str] = None
     csf_pdf_url: Optional[str] = None
+    files: Optional[list[KycFileIn]] = None
 
 
 # ---- Vault ----

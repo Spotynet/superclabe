@@ -1,4 +1,8 @@
-"""Módulo 6: Bitácoras de auditoría, conciliación y verificación de integridad."""
+"""Módulo 6: Bitácoras de auditoría, conciliación y verificación de integridad.
+
+La bitácora del sistema es exclusiva del super administrador. Cada usuario sólo
+consulta sus propias transacciones y su conciliación.
+"""
 
 # SC-DEV-SIG-v1: vD6DduWorGGix6k1MrSYIwrbVwyD5TK6xNjDE1rSz9fOEyX1FODabSK_enxqp3NGut0hIQ-uA1ssq4B3l4l7aCrK-ADihonMWSIPXNt4UedMjtbS4nJ6VhrAwDPBk_lXvZORrWah6-BqG0yMrRo=
 # (firma de autoría cifrada AES-256-GCM — verificar con tools/verify_dev_signature.py)
@@ -8,10 +12,11 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from ..audit import log_payload
 from ..crypto import chained_hash
 from ..database import get_db
 from ..models import AuditLog, Transaction, User
-from ..security import get_current_user
+from ..security import get_current_admin, get_current_user
 
 router = APIRouter(prefix="/api/v1/compliance", tags=["6. Auditoría & Conciliación (Regla 58a)"])
 CEP = "https://www.banxico.org.mx/cep/check?folio="
@@ -19,7 +24,7 @@ CEP = "https://www.banxico.org.mx/cep/check?folio="
 
 @router.get("/audit-logs")
 def audit_logs(event_category: str | None = Query(default=None),
-               user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+               admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     q = db.query(AuditLog).order_by(AuditLog.timestamp.desc())
     if event_category:
         q = q.filter(AuditLog.event_category == event_category)
@@ -38,14 +43,13 @@ def audit_logs(event_category: str | None = Query(default=None),
 
 
 @router.get("/audit-logs/verify")
-def verify_chain(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def verify_chain(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
     """Recalcula la cadena de hashes y confirma la inmutabilidad de la bitácora."""
     logs = db.query(AuditLog).order_by(AuditLog.timestamp.asc()).all()
     prev = "0" * 64
     broken = None
     for l in logs:
-        payload = f"{l.timestamp.isoformat()}|{l.operator}|{l.action}|{l.event_category}|{l.client_ip}|{l.severity}"
-        expected = chained_hash(prev, payload)
+        expected = chained_hash(prev, log_payload(l))
         if expected != l.integrity_hash:
             broken = l.id
             break
@@ -54,18 +58,14 @@ def verify_chain(db: Session = Depends(get_db), user: User = Depends(get_current
 
 
 @router.get("/transactions")
-def transactions(scope: str = Query(default="all"),
-                 user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Transacciones del sistema (scope=all) o del usuario actual (scope=me).
-
-    Devuelve alias de emisor y receptor para visibilidad entre dispositivos.
-    """
-    q = db.query(Transaction).order_by(Transaction.created_at.desc())
-    if scope == "me":
-        q = q.filter((Transaction.payer_id == user.id) | (Transaction.payee_id == user.id))
-    txs = q.limit(1000).all()
-    # Mapa de id -> alias para no consultar usuario por transacción
-    aliases = {u.id: u.alias for u in db.query(User).all()}
+def transactions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Transacciones donde el usuario actual es emisor o receptor (nunca las de terceros)."""
+    txs = (db.query(Transaction)
+           .filter((Transaction.payer_id == user.id) | (Transaction.payee_id == user.id))
+           .order_by(Transaction.created_at.desc()).limit(1000).all())
+    ids = {t.payer_id for t in txs} | {t.payee_id for t in txs}
+    ids.discard(None)
+    aliases = {u.id: u.alias for u in db.query(User).filter(User.id.in_(ids)).all()} if ids else {}
     out = []
     for t in txs:
         out.append({

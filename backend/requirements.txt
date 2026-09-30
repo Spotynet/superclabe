@@ -1,8 +1,8 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 sqlalchemy==2.0.35
-psycopg2-binary==2.9.9
-pydantic[email]==2.9.2
+psycopg2-binary==2.9.13
+pydantic[email]>=2.12.5
 python-jose[cryptography]==3.3.0
 cryptography==43.0.1
 python-multipart==0.0.9
