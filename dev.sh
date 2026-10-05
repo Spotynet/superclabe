@@ -1,64 +1,63 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Superclabe DEVELOPMENT — shared EC2 (project nginx on 127.0.0.1:3024).
+#
+# Once: sudo ./deploy/apply-nginx.sh
+# Day-to-day: ./dev.sh
+# Prod (dedicated): ./deploy.sh
+set -euo pipefail
 
-echo "🚀 Starting SUPERCLABE DEV (api + frontend)"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BACKEND_DIR="$SCRIPT_DIR/backend"
-VENV_PY="$BACKEND_DIR/venv/bin/python"
+# === Dev domains (committed) ===
+SUPERCLABE_WEB_HOST="superclabe-dev.spotynet.com"
 
-APP_NAME="superclabe-api-dev"
-PORT=3017
-HOST=127.0.0.1
+export SUPERCLABE_WEB_HOST
 
-# -------------------------
-# 🌿 Load environment
-# -------------------------
-if [ ! -f "$SCRIPT_DIR/.env" ]; then
-  echo "❌ Missing $SCRIPT_DIR/.env (copy from .env.example and set DATABASE_URL)"
+if [[ -f VERSION ]]; then
+  export APP_VERSION="$(head -n1 VERSION | tr -d '[:space:]')"
+fi
+
+compose() {
+  if docker info >/dev/null 2>&1; then
+    docker compose "$@"
+  elif sudo -n docker info >/dev/null 2>&1; then
+    sudo docker compose "$@"
+  else
+    echo "Docker needs privileges. Prefer: sudo usermod -aG docker \$USER && newgrp docker" >&2
+    sudo docker compose "$@"
+  fi
+}
+
+if [[ ! -f .env ]]; then
+  echo "Missing .env (copy from .env.example and set DATABASE_URL, AES_SECRET_KEY, JWT_SECRET, …)" >&2
   exit 1
 fi
+
+# SQLAlchemy 2 rejects legacy postgres:// — normalize if present in .env / shell
 set -a
 # shellcheck disable=SC1091
-. "$SCRIPT_DIR/.env"
+. ./.env
 set +a
-
-if [ ! -x "$VENV_PY" ]; then
-  echo "❌ Missing venv python: $VENV_PY"
-  echo "   Create it: python3 -m venv --without-pip backend/venv && backend/venv/bin/pip install -r backend/requirements.txt"
-  exit 1
-fi
-
-# SQLAlchemy 2 no longer accepts the legacy postgres:// scheme
-case "$DATABASE_URL" in
+case "${DATABASE_URL:-}" in
   postgres://*) DATABASE_URL="postgresql://${DATABASE_URL#postgres://}" ;;
 esac
-export DATABASE_URL AES_SECRET_KEY JWT_SECRET JWT_EXPIRE_MIN SEED_DEMO_USERS
+export DATABASE_URL
 
-# -------------------------
-# 🧹 Clean old process
-# -------------------------
-echo "🧹 Cleaning old PM2 process..."
-pm2 delete $APP_NAME 2>/dev/null
+echo "Cleaning old Superclabe PM2 processes (if any)..."
+pm2 delete superclabe-api-dev 2>/dev/null || true
+pm2 save 2>/dev/null || true
 
-# -------------------------
-# 🐍 Start FastAPI (uvicorn)
-# -------------------------
-echo "🐍 Starting FastAPI ($APP_NAME) on $HOST:$PORT..."
-pm2 start "$VENV_PY" \
-  --name "$APP_NAME" \
-  --cwd "$BACKEND_DIR" \
-  -- -m uvicorn app.main:app --host "$HOST" --port "$PORT"
-
-# -------------------------
-# 💾 Save PM2 state
-# -------------------------
-pm2 save
-
-# -------------------------
-# 📊 Status
-# -------------------------
-echo "✅ SUPERCLABE DEV running:"
-pm2 list
-echo ""
-echo "  superclabe-dev -> https://superclabe-dev.spotynet.com  (localhost:$PORT)"
-echo "                  http://$HOST:$PORT"
+echo "Starting Superclabe DEV (compose.yaml → 127.0.0.1:3024)..."
+echo "  web: ${SUPERCLABE_WEB_HOST}"
+compose -f compose.yaml up -d --build
+echo
+compose -f compose.yaml ps
+echo
+echo "DEV URL: https://${SUPERCLABE_WEB_HOST}/"
+echo
+echo "Logs: docker compose -f compose.yaml logs -f"
+echo "Stop: docker compose -f compose.yaml down"
+echo
+echo "If host nginx still points at 3017:"
+echo "  sudo ./deploy/apply-nginx.sh"

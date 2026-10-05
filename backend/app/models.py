@@ -216,6 +216,7 @@ class Transaction(Base):
     charge_id = Column(GUID(), ForeignKey("charges.id"), nullable=True)
     folio_codi = Column(String(100), nullable=False)
     payer_id = Column(GUID(), ForeignKey("users.id"), nullable=True)
+    payer_account_id = Column(GUID(), ForeignKey("vault_accounts.id", ondelete="SET NULL"), nullable=True)
     payee_id = Column(GUID(), ForeignKey("users.id"), nullable=False)
     amount = Column(Numeric(12, 2), nullable=False)
     calculated_fee = Column(Numeric(12, 2), nullable=False, default=0)  # tarifa escalonada v5 + I.V.A.

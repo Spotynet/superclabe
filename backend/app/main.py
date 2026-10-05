@@ -18,11 +18,16 @@ from .routers import admin, auth, billing, checkout, compliance, kyc, membership
 
 
 def _read_app_version() -> str:
-    """Lee la versión semántica desde webapp-spei-codi/VERSION."""
-    for p in (
-        Path(__file__).resolve().parents[2] / "VERSION",
-        Path(__file__).resolve().parents[3] / "VERSION",
-    ):
+    """Lee la versión semántica desde VERSION (repo root or /VERSION in Docker)."""
+    here = Path(__file__).resolve()
+    candidates = []
+    for i in (2, 3):
+        try:
+            candidates.append(here.parents[i] / "VERSION")
+        except IndexError:
+            pass
+    candidates.append(Path("/VERSION"))
+    for p in candidates:
         try:
             if p.is_file():
                 ver = p.read_text(encoding="utf-8").strip().splitlines()[0].strip()

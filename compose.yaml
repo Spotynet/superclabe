@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env
+    environment:
+      APP_VERSION: ${APP_VERSION:-}
+    volumes:
+      - ./backend:/code
+      - ./frontend:/frontend:ro
+      - ./VERSION:/VERSION:ro
+    expose:
+      - "3017"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "127.0.0.1:3024:80"
+    environment:
+      SUPERCLABE_WEB_HOST: ${SUPERCLABE_WEB_HOST:-superclabe-dev.spotynet.com}
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -41,6 +41,20 @@ def _get_charge(db, folio):
     return c
 
 
+def _payer_vault(db: Session, owner: User, account_id: str) -> VaultAccount:
+    """La cuenta con la que se paga tiene que estar en la bóveda de ese usuario."""
+    acc = db.query(VaultAccount).filter(
+        VaultAccount.id == account_id, VaultAccount.user_id == owner.id,
+    ).first()
+    if not acc:
+        raise HTTPException(422, "Elige una cuenta de tu bóveda para realizar el pago")
+    return acc
+
+
+def _account_out(acc: VaultAccount) -> dict:
+    return {"alias": acc.alias or "Cuenta", "clabe_masked": acc.clabe_masked, "bank_name": acc.bank_name}
+
+
 @router.post("/direct", status_code=201)
 def direct_payment(body: DirectPayIn, request: Request,
                    user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -56,6 +70,7 @@ def direct_payment(body: DirectPayIn, request: Request,
             "error": "SELF_PAYMENT",
             "message": "No puedes enviarte pagos a ti mismo.",
         })
+    source = _payer_vault(db, user, body.source_account_id)
     recipient = find_operational_user(db, body.recipient_alias)
     if not recipient:
         raise HTTPException(404, "Usuario destinatario no encontrado en el sistema")
@@ -100,6 +115,7 @@ def direct_payment(body: DirectPayIn, request: Request,
     clave = "SPEI" + datetime.utcnow().strftime("%y%m%d%H%M%S")
     tx = Transaction(
         charge_id=None, folio_codi=folio, payer_id=user.id, payee_id=recipient.id,
+        payer_account_id=source.id,
         amount=amount, calculated_fee=fee, clave_rastreo=clave,
         status="PROCESSED", settled_at=datetime.utcnow(),
     )
@@ -120,10 +136,11 @@ def direct_payment(body: DirectPayIn, request: Request,
                          "fee_recipient": fee, "base_fee": fees["base_fee"], "iva": fees["iva"],
                          "fee_rate": fees["fee_rate"], "fee_model": fees["fee_model"],
                          "total_fee": fee, "amount": amount, "recipient": recipient.alias,
-                         "concept": body.concept})
+                         "concept": body.concept, "source_account": source.clabe_masked})
     return {
         "status": "PROCESSED", "folio_codi": folio, "clave_rastreo": clave,
         "recipient_alias": recipient.alias, "amount": amount,
+        "source_account": _account_out(source),
         "sender_fee": 0, "recipient_fee": fee, "base_fee": fees["base_fee"],
         "iva": fees["iva"], "total_fee": fee, "fee_rate": fees["fee_rate"],
         "concept": body.concept or "Pago directo",
@@ -258,9 +275,10 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
         role="recibir este cobro",
         as_self=False,
     )
-    # Si el pagador es usuario del sistema, exige nivel mínimo para operar (sin tope de monto)
-    if payer:
-        assert_min_kyc_level(payer, role="realizar este pago", as_self=False)
+    if payer is None:
+        raise HTTPException(422, "Inicia sesión y elige una cuenta de tu bóveda para pagar")
+    source = _payer_vault(db, payer, body.source_account_id)
+    assert_min_kyc_level(payer, role="realizar este pago", as_self=False)
 
     # --- Módulo 5: deducción de tarifa escalonada v5 + I.V.A. al beneficiario/emisor de la orden ---
     # (el dueño del cobro paga la tarifa de software; no hay comisión al pagador)
@@ -300,7 +318,7 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
     clave = "SPEI" + datetime.utcnow().strftime("%y%m%d%H%M%S")
     tx = Transaction(
         charge_id=c.id, folio_codi=c.folio_codi, payee_id=beneficiary.id,
-        payer_id=payer.id if payer else None,
+        payer_id=payer.id, payer_account_id=source.id,
         amount=pay_amount, calculated_fee=fee, clave_rastreo=clave,
         status="PROCESSED", settled_at=datetime.utcnow(),
     )
@@ -321,10 +339,12 @@ def pay(folio: str, body: PayIn, request: Request, db: Session = Depends(get_db)
                 details={"folio": folio, "clave_rastreo": clave, "fee": fee,
                          "base_fee": fees["base_fee"], "iva": fees["iva"],
                          "fee_rate": fees["fee_rate"], "fee_model": fees["fee_model"],
-                         "amount": pay_amount, "uso": f"{c.uses_count}/{c.max_uses}"})
+                         "amount": pay_amount, "uso": f"{c.uses_count}/{c.max_uses}",
+                         "source_account": source.clabe_masked})
     return {
         "status": "PROCESSED", "folio_codi": c.folio_codi, "clave_rastreo": clave,
         "liquidated_amount": pay_amount, "calculated_fee": fee,
+        "source_account": _account_out(source),
         "base_fee": fees["base_fee"], "iva": fees["iva"], "fee_rate": fees["fee_rate"],
         "charge_status": c.status, "uses_count": c.uses_count, "max_uses": c.max_uses,
         "new_membership_balance": float(membership.balance),

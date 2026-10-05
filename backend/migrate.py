@@ -72,6 +72,15 @@ def plan():
     if "kyc_dossiers" not in insp.get_table_names():
         actions.append(("create_kyc_dossiers", None))
 
+    tx_cols = _existing_columns(insp, "transactions")
+    if tx_cols is not None and "payer_account_id" not in tx_cols:
+        if dialect == "postgresql":
+            actions.append(("sql",
+                "ALTER TABLE transactions ADD COLUMN payer_account_id UUID "
+                "REFERENCES vault_accounts(id) ON DELETE SET NULL"))
+        else:
+            actions.append(("sql", "ALTER TABLE transactions ADD COLUMN payer_account_id CHAR(36)"))
+
     # Rol del usuario (user | superadmin)
     user_cols = _existing_columns(insp, "users")
     if user_cols is not None and "role" not in user_cols:

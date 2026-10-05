@@ -1,0 +1,7 @@
+# Dedicated / production: project nginx owns host :80.
+# Do NOT use on the shared Spotynet multi-app EC2.
+
+services:
+  nginx:
+    ports: !override
+      - "80:80"

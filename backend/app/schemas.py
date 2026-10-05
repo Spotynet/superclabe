@@ -183,6 +183,7 @@ class PayIn(BaseModel):
     payer_totp: Optional[str] = None
     payer_alias: Optional[str] = None      # identidad del pagador (obligatoria en cobros TARGETED)
     pay_amount: Optional[float] = Field(default=None, gt=0)  # monto elegido en cobros de monto libre
+    source_account_id: str = Field(min_length=8, max_length=40)  # cuenta de la bóveda del pagador
 
 
 class DirectPayIn(BaseModel):
@@ -190,6 +191,7 @@ class DirectPayIn(BaseModel):
     recipient_alias: str = Field(pattern=r"^\$@[A-Za-z0-9._-]{3,}$")
     amount: float = Field(gt=0)
     concept: Optional[str] = Field(default=None, max_length=40)
+    source_account_id: str = Field(min_length=8, max_length=40)  # cuenta de la bóveda del pagador
 
 
 # ---- Membership ----

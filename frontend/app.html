@@ -1743,7 +1743,9 @@
             <div id="sendUserResults" class="user-results"></div>
             <div id="sendTargetSel" class="note hide" style="margin-top:8px"></div>
 
-            <div class="pay-step-label" style="margin-top:18px">2 · Monto y concepto</div>
+            <div class="pay-step-label" style="margin-top:18px">2 · ¿Desde qué cuenta?</div>
+            <div id="sendAccountSlot"></div>
+            <div class="pay-step-label" style="margin-top:18px">3 · Monto y concepto</div>
             <div class="row">
               <div><label style="margin-top:0">Monto (MXN)</label>
                 <div class="money-field">
@@ -1761,7 +1763,7 @@
 
         <!-- Paso 3: resultado del envío -->
         <div class="payopt-body hide" id="opt-direct-result">
-          <div class="pay-step-label">3 · Resultado del envío</div>
+          <div class="pay-step-label">4 · Resultado del envío</div>
           <div id="sendResultStep"></div>
         </div>
 
@@ -2126,7 +2128,7 @@ function alertKycFromError(e){
 function formatKycUsage(u){
   if(!u) return "—";
   if(Number(u.kyc_level||1)>=4 || u.monthly_limit==null) return `${money(u.monthly_used||0)} abonos · sin límite`;
-  return `${money(u.monthly_used||0)} / ${money(u.monthly_limit)} abonos · quedan ${money(u.monthly_remaining!=null?u.monthly_remaining:0)}`;
+  return `${money(u.monthly_used||0)} / ${money(u.monthly_limit)} abonos · Aún puedes recibir ${money(u.monthly_remaining!=null?u.monthly_remaining:0)}`;
 }
 async function loadCharges(){
   try{ const list=await api("/billing/charges"); DB.charges=list.map(mapCharge); }
@@ -4110,6 +4112,33 @@ function payBack(){
   if(PAY_QR_OPTS.includes(currentPayOpt)) payOption("qr");
   else payOption(null);
 }
+function vaultPaySelectHtml(id){
+  const list=state.vault||[];
+  if(!list.length){
+    return `<label>Cuenta con la que pagas</label>
+      <p class="note warn" style="margin:0">Agrega una cuenta en <a href="javascript:show('vault')">Mis cuentas</a> para poder pagar.</p>`;
+  }
+  const blank=list.length>1?`<option value="">Elige una cuenta…</option>`:"";
+  const opts=list.map(a=>`<option value="${a.id}">${a.alias} — ${a.masked} (${a.bank})</option>`).join("");
+  return `<label for="${id}">Cuenta con la que pagas</label><select id="${id}">${blank}${opts}</select>`;
+}
+function requireVaultAccount(id){
+  const list=state.vault||[];
+  if(!list.length){ toast("Agrega una cuenta en Mis cuentas para pagar","err"); return null; }
+  const val=String((($("#"+id)||{}).value)||"").trim();
+  if(!val){ toast("Elige la cuenta de tu bóveda con la que vas a pagar","err"); const el=$("#"+id); if(el) el.focus(); return null; }
+  const acc=list.find(a=>a.id===val);
+  if(!acc){ toast("Esa cuenta no está en tu bóveda","err"); return null; }
+  return acc;
+}
+function sourceAccountLine(acc){
+  if(!acc) return "";
+  const alias=acc.alias||"Cuenta";
+  const masked=acc.clabe_masked||acc.masked||"";
+  const bank=acc.bank_name||acc.bank||"";
+  return `<div class="pay-result-kv"><span>Pagaste desde</span><b>${alias}${masked?" · "+masked:""}${bank?" · "+bank:""}</b></div>`;
+}
+
 function payOption(opt){
   if(typeof stopCam==="function") stopCam();
   lastScanned=null;
@@ -4185,6 +4214,9 @@ async function selectPayableCharge(folio){
 const sendForm={ targetAlias:null };
 async function renderSendForm(){
   $("#sendBox").innerHTML="";
+  try{ await loadSession(); }catch(e){}
+  const slot=$("#sendAccountSlot");
+  if(slot) slot.innerHTML=vaultPaySelectHtml("sendAccount");
   const favBox=$("#sendFavs");
   if(favBox) favBox.innerHTML=`<div class="hint">Cargando favoritos…</div>`;
   await refreshFavoritesData();
@@ -4253,6 +4285,7 @@ function buildSendResultHtml(r, {forModal=false}={}){
       </div>`}
       <div class="pay-result-body" style="${forModal?"padding-top:4px":""}">
         <div class="pay-result-kv"><span>Destinatario</span><b>${maskName(tnm||target)}<br><span class="mono" style="font-size:12px">${target}</span></b></div>
+        ${sourceAccountLine(r.source_account)}
         <div class="pay-result-kv"><span>Concepto</span><b>${concept}</b></div>
         <div class="pay-result-kv"><span>Clave de rastreo</span><b class="mono" style="font-size:12px">${r.clave_rastreo||"—"}</b></div>
         <div class="pay-result-kv"><span>Comisión receptor${r.fee_rate!=null?` (${fmtRate(r.fee_rate)})`:""}</span><b>${money(r.base_fee!=null?r.base_fee:r.recipient_fee)}</b></div>
@@ -4305,6 +4338,8 @@ async function sendDirectPayment(){
   if(target===DB.session){toast("No puedes enviarte pagos a ti mismo","err");return;}
   const amount=Math.round(parseMoneyInput($("#sendAmount").value)*100)/100;
   if(!(amount>0)){toast("Escribe un monto válido","err");return;}
+  const source=requireVaultAccount("sendAccount");
+  if(!source) return;
   // Emisor: solo nivel mínimo. Receptor: tope de abonos del mes.
   const op=kycOperateCheck("enviar pagos");
   if(op){ showKycLimitModal(op); return; }
@@ -4312,7 +4347,7 @@ async function sendDirectPayment(){
   if(limRecv){ showKycLimitModal(limRecv); return; }
   const concept=($("#sendConcept").value||"").trim()||"Pago directo";
   let r;
-  try{ r=await api("/checkout/direct",{method:"POST",body:{recipient_alias:target,amount,concept}}); }
+  try{ r=await api("/checkout/direct",{method:"POST",body:{recipient_alias:target,amount,concept,source_account_id:source.id}}); }
   catch(e){ if(alertKycFromError(e)) return; toast(e.message||"No se pudo enviar el pago","err"); return; }
   await loadSession(); await loadTransactions(); refreshChips(); refreshNotifications();
   const tu=DB.users[target]; const tnm=(tu&&tu.profile&&(tu.profile.business_name||tu.profile.full_name))||"";
@@ -4322,6 +4357,7 @@ async function sendDirectPayment(){
     target,
     targetName:tnm,
     concept:r.concept||concept,
+    source_account:r.source_account||{alias:source.alias,clabe_masked:source.masked,bank_name:source.bank},
     clave_rastreo:r.clave_rastreo,
     base_fee:r.base_fee,
     iva:r.iva,
@@ -4406,7 +4442,8 @@ async function onScan(text){
   toast("QR leído ✓ — "+p.folio,"ok");
   showPayer(c);
 }
-function showPayer(c){
+async function showPayer(c){
+  try{ await loadSession(); }catch(e){}
   if(c.status!=="PENDING"){ $("#payBox").innerHTML=`<div class="note warn">Este cobro ya está en estado <b>${c.status}</b>.</div>`; return; }
   // Cobro personalizado: sólo el usuario destino puede pagarlo
   if(c.chargeType==="TARGETED" && c.target && c.target!==DB.session){
@@ -4436,6 +4473,7 @@ function showPayer(c){
         </div>
         ${usesInfo}
         ${c.requiresPin?`<div class="lbl">PIN de acceso (4 díg.)</div><input id="coPin" maxlength="4" inputmode="numeric" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;letter-spacing:6px;text-align:center;font-size:18px;font-weight:700">`:""}
+        <div style="margin-top:12px">${vaultPaySelectHtml("payAccount")}</div>
         <button style="width:100%;margin-top:16px;min-height:48px;font-size:15px" onclick="payCharge('${c.folio}')">Pagar ahora</button>
         <div style="text-align:center;margin-top:10px;font-size:11.5px;color:#64748b">Pago seguro · liquidación SPEI en segundos</div>
       </div>
@@ -4446,7 +4484,9 @@ function showPayer(c){
 async function payCharge(folio){
   const c=lastScanned;
   if(!c||c.folio!==folio){toast("Vuelve a escanear el cobro","err");return;}
-  const body={payer_alias:DB.session};
+  const source=requireVaultAccount("payAccount");
+  if(!source) return;
+  const body={payer_alias:DB.session, source_account_id:source.id};
   if(c.requiresPin){ body.pin=($("#coPin")||{}).value||""; }
   let payAmt=c.openAmount?null:Number(c.amount);
   if(c.openAmount){
@@ -4482,6 +4522,7 @@ async function payCharge(folio){
       <div class="hd"><span class="codi"><span class="brand-mark">SÚPER CLABE</span> · ✓ Pagado</span><span style="font-size:11px">CoDi · SPEI</span></div>
       <div class="bd">
         <div class="amt" style="color:var(--brand)">${money(r.liquidated_amount)}</div>
+        <div class="kv"><span>Pagaste desde</span><b>${(r.source_account&&r.source_account.alias)||source.alias} · ${(r.source_account&&r.source_account.clabe_masked)||source.masked}</b></div>
         <div class="kv"><span>Clave de rastreo</span><b class="mono">${r.clave_rastreo}</b></div>
         <div class="kv"><span>Comisión ${fmtRate(r.fee_rate!=null?r.fee_rate:calcFee(r.liquidated_amount).rate)} (emisor)</span><b>${money(r.base_fee!=null?r.base_fee:r.calculated_fee)}</b></div>
         <div class="kv"><span>I.V.A. 16% (emisor)</span><b>${money(r.iva!=null?r.iva:0)}</b></div>

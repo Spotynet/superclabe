@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     charge_id UUID REFERENCES charges(id),
     folio_codi VARCHAR(100) NOT NULL,
     payer_id UUID REFERENCES users(id),
+    payer_account_id UUID REFERENCES vault_accounts(id) ON DELETE SET NULL,
     payee_id UUID NOT NULL REFERENCES users(id),
     amount NUMERIC(12,2) NOT NULL,
     calculated_fee NUMERIC(12,2) NOT NULL DEFAULT 0,   -- tarifa escalonada v5 + I.V.A.
